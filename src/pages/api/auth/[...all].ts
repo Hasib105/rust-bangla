@@ -3,4 +3,4 @@ import { getAuth } from '../../../lib/auth';
 
 export const prerender = false;
 
-export const ALL: APIRoute = ({ request }) => getAuth(request).handler(request);
+export const ALL: APIRoute = ({ request }) => getAuth().handler(request);

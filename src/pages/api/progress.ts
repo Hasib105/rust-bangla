@@ -1,20 +1,22 @@
 // GET: the signed-in learner's saved state.  PUT: merge the browser's state into it, return the result.
 import type { APIRoute } from 'astro';
-import { getAuth, db } from '../../lib/auth';
+import { getAuth } from '../../lib/auth';
+import { getPool } from '../../lib/db';
 import { merge, xpOf } from '../../scripts/merge';
 
 export const prerender = false;
 
-const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
 async function userOf(request: Request) {
-  const s = await getAuth(request).api.getSession({ headers: request.headers });
+  const s = await getAuth().api.getSession({ headers: request.headers });
   return s?.user ?? null;
 }
 
 async function load(userId: string) {
-  const row = await db().prepare('select state from progress where userId = ?').bind(userId).first<{ state: string }>();
-  return row ? JSON.parse(row.state) : null;
+  const { rows } = await getPool().query('select state from progress where "userId" = $1', [userId]);
+  return rows[0]?.state ?? null;
 }
 
 export const GET: APIRoute = async ({ request }) => {
@@ -33,9 +35,10 @@ export const PUT: APIRoute = async ({ request }) => {
   if (!incoming || typeof incoming !== 'object' || typeof incoming.lessons !== 'object') return json({ error: 'bad state' }, 400);
   const saved = await load(user.id);
   const state = saved ? merge(saved, incoming) : { ...incoming, xp: xpOf(incoming) };
-  await db()
-    .prepare('insert into progress (userId, state, xp, updatedAt) values (?1, ?2, ?3, ?4) on conflict(userId) do update set state = ?2, xp = ?3, updatedAt = ?4')
-    .bind(user.id, JSON.stringify(state), state.xp, Date.now())
-    .run();
+  await getPool().query(
+    `insert into progress ("userId", state, xp, "updatedAt") values ($1, $2, $3, now())
+     on conflict ("userId") do update set state = $2, xp = $3, "updatedAt" = now()`,
+    [user.id, state, state.xp],
+  );
   return json({ state });
 };

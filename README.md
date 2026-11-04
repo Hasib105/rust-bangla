@@ -37,24 +37,22 @@ Read **CONTENT_GUIDE.md** before writing or editing a lesson.
 ## Accounts (GitHub login)
 
 Learners can play as guests, with progress saved in the browser, or sign in with GitHub to sync their progress across devices.
-- Login is handled by [better-auth](https://better-auth.com) running on our own Cloudflare Worker, and progress is stored in Cloudflare D1. There is no third-party auth service.
-- `src/pages/api/auth/[...all].ts` handles the login routes. `src/pages/api/progress.ts` does the GET and PUT for progress, merging the two states (`src/scripts/merge.ts`).
+- Login uses [better-auth](https://better-auth.com) on our own API route, and the data is stored in Postgres (Neon).
+- `src/pages/api/auth/[...all].ts` handles the login routes. `src/pages/api/progress.ts` does the GET and PUT for progress, merging the two states (`src/scripts/merge.ts`). XP is recalculated, so nothing is double-counted.
+- `scripts/migrate.mjs` creates the tables. It is safe to re-run, and it runs automatically at the start of every build when `DATABASE_URL` is set.
 - To make login required, set `requireLogin: true` in `src/data/courses.ts`.
 
-## Deploy to Cloudflare (free plan)
+## Deploy to Vercel (+ Neon)
 
-1. **Log in to Cloudflare:** `npx wrangler login`
-2. **Create the database:** `npx wrangler d1 create rust-bangla`. Copy the printed `database_id` into `wrangler.jsonc`.
-3. **Create the tables:** `npm run db:migrate`
-4. **Create a GitHub OAuth App** (GitHub → Settings → Developer settings → OAuth Apps → New):
-   - Homepage URL: `https://rust-bangla.<your-subdomain>.workers.dev`, or your own domain
-   - Authorization callback URL: `https://<same host>/api/auth/callback/github`
-5. **Set the secrets:**
-   ```bash
-   openssl rand -hex 32 | npx wrangler secret put BETTER_AUTH_SECRET
-   npx wrangler secret put GITHUB_CLIENT_ID
-   npx wrangler secret put GITHUB_CLIENT_SECRET
-   ```
-6. **Deploy:** `SITE_URL=https://<same host> npm run deploy`
+1. **Create the project:** `npx vercel` (or import the repo in the Vercel dashboard). The framework is detected as Astro.
+2. **Add the database:** in the Vercel project, go to Storage → Create → **Neon** (free). This adds `DATABASE_URL` to the project.
+3. **Create a GitHub OAuth App** (GitHub → Settings → Developer settings → OAuth Apps → New):
+   - Homepage URL: `https://<project>.vercel.app`
+   - Authorization callback URL: `https://<project>.vercel.app/api/auth/callback/github`
+4. **Set environment variables** in Vercel → Settings → Environment Variables:
+   - `BETTER_AUTH_SECRET`: from `openssl rand -hex 32`
+   - `BETTER_AUTH_URL`: `https://<project>.vercel.app`
+   - `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`: from step 3
+5. **Deploy:** `npx vercel --prod`. The build creates the tables, then builds the site.
 
-For local work, put the same three values in `.dev.vars` (it is git-ignored). Run `npm run db:migrate:local` once, then `npm run preview`.
+For local work, put the same variables in `.env` (it is git-ignored), with `DATABASE_URL` pointing at any Postgres. Then run `npm run db:migrate` once, followed by `npm run dev`.
