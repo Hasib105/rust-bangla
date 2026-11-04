@@ -1,9 +1,17 @@
 # Content guide (lessons + quizzes)
 
+The site holds several courses (Rust now; Axum, Actix and others later). Each course lives in `src/content/courses/<course>/`.
 Every lesson is two files that share one id (`NN-slug`):
 
-- `src/content/lessons/NN-slug.md`: the short lesson in Bangla
-- `src/content/quizzes/NN-slug.json`: the game: 8–12 quiz cards in Bangla
+- `src/content/courses/<course>/lessons/NN-slug.md`: the short lesson in Bangla. Each `## ` section becomes one card in the lesson player.
+- `src/content/courses/<course>/quizzes/NN-slug.json`: 8–12 question cards in Bangla
+
+**Adding a new course:**
+1. Add it to `src/data/courses.ts`, set `status: 'live'` and list its parts.
+2. Create `src/content/courses/<id>/lessons/` and `src/content/courses/<id>/quizzes/`.
+
+Pages, the challenges, the exam and progress tracking all appear automatically.
+Crate-based courses (Axum, Actix) can't be compiled by the checker, which uses plain `rustc`, so mark their code blocks `rust ignore`.
 
 Run `npm run check:content` before you commit. It compiles and runs every Rust block and checks it.
 
@@ -21,16 +29,14 @@ Write the way a friendly senior explains things in a Dhaka coffee shop: short se
 ---
 title: "Ownership: Rust-এর হৃদয়"
 short: "Ownership"          # 1–2 words for the board node
-part: 2                     # see src/data/parts.ts
+part: 2                     # see the course's parts in src/data/courses.ts
 order: 7                    # global lesson number (01..40)
 summary: "একটা value-এর মালিক একজনই। মালিক চলে গেলে value-ও মুছে যায়।"
-icon: "🧠"
-minutes: 8
-video: "V59N9xxKfoU"        # optional, Rust Bangla YouTube id
+minutes: 5
 ---
 ```
 
-Body. Keep it short: about 500–900 Bangla words plus code. Use these sections in this order:
+Body. Keep it short: about 250–400 Bangla words plus code, with 1–3 sentences and at most one example per section. No decorative emoji. Use these sections in this order:
 
 1. `## কেন শিখবো?`: 2–4 lines. Give the real problem this topic solves, ideally compared to C, Python or JS.
 2. Two to four idea sections (`## ...`). Each has **one idea**: one short explanation, one small complete program, then its output.

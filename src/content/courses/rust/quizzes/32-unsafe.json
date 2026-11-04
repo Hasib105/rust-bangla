@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`unsafe` লিখলে Rust-এর borrow checker পুরোপুরি বন্ধ হয়ে যায়।",
+      "answer": false,
+      "explain": "`unsafe` শুধু কয়েকটা বাড়তি কাজের অনুমতি দেয়। ownership আর borrow-এর নিয়ম আগের মতোই চলে।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন কাজটা করতে `unsafe` লাগে?",
+      "options": [
+        "raw pointer বানানো (`&x as *const i32`)",
+        "raw pointer dereference করা (`*p`)",
+        "`Vec::push` ডাকা",
+        "`const` পড়া"
+      ],
+      "answer": 1,
+      "explain": "pointer বানানো safe, কিন্তু তার ভেতরের value পড়তে গেলে address ঠিক কিনা compiler জানে না, তাই `unsafe` লাগে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let mut a = 1;\n    let p = &mut a as *mut i32;\n    unsafe {\n        *p = *p + 41;\n    }\n    println!(\"{a}\");\n}",
+      "options": [
+        "42",
+        "1",
+        "compile error",
+        "0"
+      ],
+      "answer": 0,
+      "explain": "`p` দিয়ে `a`-র মান বদলানো হয়েছে: 1 + 41 = 42। তারপর `a` সরাসরি print হয়।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "unsafe fn danger() -> i32 {\n    7\n}\n\nfn main() {\n    let v = danger();\n    println!(\"{v}\");\n}",
+      "answer": 6,
+      "explain": "`unsafe fn` ডাকতে `unsafe { }` block লাগে। লাইন ৬-এ সেটা নেই, তাই E0133।"
+    },
+    {
+      "type": "fill",
+      "q": "raw pointer `p` পড়তে ফাঁকা জায়গায় কী বসবে?",
+      "code": "let x = 5;\nlet p = &x as *const i32;\nlet r = ___ { *p };",
+      "answer": [
+        "unsafe"
+      ],
+      "explain": "raw pointer dereference করতে `unsafe` block লাগে।"
+    },
+    {
+      "type": "order",
+      "q": "safe function-এর ভেতরে `unsafe` ব্যবহারের সঠিক ক্রম সাজাও।",
+      "lines": [
+        "fn get(s: &[i32], i: usize) -> Option<i32> {",
+        "if i >= s.len() { return None; }",
+        "let p = s.as_ptr();",
+        "let v = unsafe { *p.add(i) };",
+        "Some(v)",
+        "}"
+      ],
+      "explain": "আগে সীমা চেক, তারপর pointer, তারপর unsafe-এ পড়া। চেকটাই function-কে safe রাখে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let mut v = [1, 2, 3, 4];\n    let p = v.as_mut_ptr();\n    unsafe {\n        *p.add(3) = 40;\n    }\n    println!(\"{:?}\", v);\n}",
+      "options": [
+        "[1, 2, 3, 40]",
+        "[1, 2, 3, 4]",
+        "[40, 2, 3, 4]",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`p.add(3)` চতুর্থ element-এর (index 3) pointer দেয়। সেখানে 40 লেখা হয়েছে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "Rust-এর standard library (যেমন `Vec`) ভেতরে `unsafe` কোড ব্যবহার করে।",
+      "answer": true,
+      "explain": "হ্যাঁ। unsafe ভেতরে লুকানো আছে আর বাইরের API safe, ঠিক এটাই safe abstraction।"
+    },
+    {
+      "type": "choice",
+      "q": "undefined behavior (UB) মানে কী?",
+      "options": [
+        "program নিশ্চিতভাবে panic করে",
+        "program-এর আচরণ অনির্ধারিত, যা খুশি হতে পারে",
+        "শুধু একটা compile warning",
+        "program ধীরে চলে"
+      ],
+      "answer": 1,
+      "explain": "UB হলে crash, ভুল ফল বা security hole কিছুই হতে পারে। সেটা কখনো কখনো ঠিক চলেও, তাই ধরা কঠিন।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "static mut HITS: u32 = 0;\n\nfn bump() {\n    unsafe {\n        HITS += 2;\n    }\n}\n\nfn main() {\n    bump();\n    bump();\n    bump();\n    let n = unsafe { HITS };\n    println!(\"{n}\");\n}",
+      "options": [
+        "6",
+        "3",
+        "0",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`bump()` তিনবার ডাকা হয়েছে, প্রতিবার 2 করে বাড়ে, মোট 6। মান কপি করে পড়ায় 2024 edition-এও error হয় না।"
+    }
+  ]
+}

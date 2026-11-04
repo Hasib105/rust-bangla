@@ -1,5 +1,6 @@
 import { bn } from './store';
 import { sound } from './ui';
+import { icon } from './icons';
 
 export interface Card {
   type: 'choice' | 'truefalse' | 'order' | 'fill' | 'line' | 'learn';
@@ -39,9 +40,9 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
   root.innerHTML = `
     <div class="qz">
       <div class="qz-top">
-        <button class="qz-x" aria-label="বন্ধ করো" title="বন্ধ করো">✕</button>
+        <button class="qz-x" aria-label="বন্ধ করো" title="বন্ধ করো">${icon('x', 22)}</button>
         <div class="qz-bar"><i></i></div>
-        <div class="qz-combo" hidden>🔥 <b></b></div>
+        <div class="qz-combo" hidden>${icon('flame', 18)} <b></b></div>
       </div>
       <div class="qz-body"></div>
       <div class="qz-foot">
@@ -74,8 +75,8 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
     const { c, i } = current;
     const retry = firstWrong.has(i);
     if (c.type === 'learn') {
-      body.innerHTML = `<div class="qz-meta"><span class="tag">📖 শেখো</span></div><div class="pc"><h3 class="pc-title">${esc(c.title || '')}</h3><div class="pc-body">${c.html}</div></div>`;
-      go.textContent = 'বুঝেছি →';
+      body.innerHTML = `<div class="qz-meta"><span class="tag learn">শেখো</span></div><div class="pc"><h3 class="pc-title">${esc(c.title || '')}</h3><div class="pc-body">${c.html}</div></div>`;
+      go.textContent = 'বুঝেছি';
       go.disabled = false;
       checked = true;
       solved.add(i);
@@ -85,7 +86,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
       return;
     }
     body.innerHTML = `
-      <div class="qz-meta">${retry ? '🔁 আবার চেষ্টা' : `<span class="tag">❓ প্রশ্ন</span>${bn(Math.min(qDone() + 1, qTotal))} / ${bn(qTotal)}`}${c.from ? ` · <span>${esc(c.from)}</span>` : ''}</div>
+      <div class="qz-meta">${retry ? '<span class="tag retry">আবার চেষ্টা</span>' : `<span class="tag">প্রশ্ন</span>${bn(Math.min(qDone() + 1, qTotal))} / ${bn(qTotal)}`}${c.from ? ` · <span>${esc(c.from)}</span>` : ''}</div>
       <h3 class="qz-q">${md(c.q)}</h3>
       ${c.codeHtml && c.type !== 'line' ? `<div class="q-code">${c.codeHtml}</div>` : ''}
       <div class="qz-ui"></div>`;
@@ -109,7 +110,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
         const b = document.createElement('button');
         b.className = 'opt';
         b.dataset.v = String(val);
-        b.innerHTML = `<kbd>${bn(k + 1)}</kbd><span>${label === 'সত্য' ? '✅' : '❌'} ${label}</span>`;
+        b.innerHTML = `<kbd>${bn(k + 1)}</kbd><span>${label}</span>`;
         b.onclick = () => { if (checked) return; ui.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel')); b.classList.add('sel'); ready(true); };
         ui.append(b);
       });
@@ -124,7 +125,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
       body.querySelectorAll('.q-code .line').forEach((l) => { l.innerHTML = l.innerHTML.replace('___', '<mark class="blank">___</mark>'); });
     } else if (c.type === 'line') {
       ui.className = 'qz-ui lines';
-      ui.innerHTML = `<div class="q-code tap">${c.codeHtml}</div><p class="muted hint">👆 যে লাইনে error, সেটায় ট্যাপ করো</p>`;
+      ui.innerHTML = `<div class="q-code tap">${c.codeHtml}</div><p class="muted hint">যে লাইনে সমস্যা, সেটায় ট্যাপ করো</p>`;
       const ls = [...ui.querySelectorAll<HTMLElement>('.line')];
       ls.forEach((l, k) => {
         l.dataset.n = bn(k + 1);
@@ -140,7 +141,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
       if (items.join() === c.lines!.join()) items = items.reverse();
       items.forEach((t) => {
         const chip = document.createElement('button');
-        chip.className = 'chip';
+        chip.className = 'chipq';
         chip.innerHTML = md(t);
         chip.dataset.t = t;
         chip.onclick = () => {
@@ -194,12 +195,12 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
       else solved.add(i);
     }
     comboEl.hidden = combo < 2;
-    comboEl.querySelector('b')!.textContent = `${bn(combo)} কম্বো`;
+    comboEl.querySelector('b')!.textContent = `${bn(combo)} টানা ঠিক`;
     const praise = ['দারুণ!', 'একদম ঠিক!', 'চমৎকার!', 'ঠিক ধরেছো!', 'বাহ!'];
     fb.hidden = false;
     fb.className = `qz-fb ${ok ? 'ok' : 'bad'}`;
-    fb.innerHTML = `<b>${ok ? '✅ ' + praise[Math.floor(Math.random() * praise.length)] : '❌ ঠিক হয়নি'}</b>${right}<p>${md(c.explain)}</p>`;
-    go.textContent = 'পরের প্রশ্ন →';
+    fb.innerHTML = `<b>${icon(ok ? 'check' : 'x', 20)} ${ok ? praise[Math.floor(Math.random() * praise.length)] : 'ঠিক হয়নি'}</b>${right}<p>${md(c.explain)}</p>`;
+    go.textContent = 'চালিয়ে যাও';
     go.className = `btn qz-go ${ok ? 'green' : 'red'}`;
     go.disabled = false;
     progress();

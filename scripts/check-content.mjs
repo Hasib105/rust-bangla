@@ -9,8 +9,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const root = new URL('..', import.meta.url).pathname;
-const lessonsDir = join(root, 'src/content/lessons');
-const quizDir = join(root, 'src/content/quizzes');
+const coursesDir = join(root, 'src/content/courses');
 const filters = process.argv.slice(2);
 const rustc = process.env.RUSTC || 'rustc';
 
@@ -36,12 +35,16 @@ function compile(code, dir, name) {
 }
 
 const tmp = mkdtempSync(join(tmpdir(), 'rb-check-'));
-const ids = readdirSync(lessonsDir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)).sort()
-  .filter((id) => !filters.length || filters.some((p) => id.startsWith(p)));
+// ids look like "rust/07-ownership"; filters match the lesson number or "course/number"
+const ids = readdirSync(coursesDir).flatMap((c) => existsSync(join(coursesDir, c, 'lessons'))
+  ? readdirSync(join(coursesDir, c, 'lessons')).filter((f) => f.endsWith('.md')).map((f) => `${c}/${f.slice(0, -3)}`) : []).sort()
+  .filter((id) => !filters.length || filters.some((p) => id.startsWith(p) || id.split('/')[1].startsWith(p)));
+const lessonFile = (id) => join(coursesDir, id.split('/')[0], 'lessons', id.split('/')[1] + '.md');
+const quizFile = (id) => join(coursesDir, id.split('/')[0], 'quizzes', id.split('/')[1] + '.json');
 
 let ran = 0;
 for (const id of ids) {
-  const md = readFileSync(join(lessonsDir, `${id}.md`), 'utf8');
+  const md = readFileSync(lessonFile(id), 'utf8');
   if (/[ঀ-৿]/.test(blocks(md).filter((b) => b.lang === 'rust').map((b) => b.code).join(''))) {
     fail(id, 'Bangla text inside a rust code block (code must be English only)');
   }
@@ -49,7 +52,7 @@ for (const id of ids) {
   bs.forEach((b, i) => {
     if (b.lang !== 'rust' || b.meta.includes('ignore')) return;
     const where = `${id}.md:${b.line}`;
-    const name = `b${i}`;
+    const name = `b${id.replace(/\W/g, '_')}_${i}`;
     const c = compile(b.code, tmp, name);
     ran++;
     if (b.meta.includes('compile_fail')) {
@@ -68,7 +71,7 @@ for (const id of ids) {
   });
 
   // quiz sanity
-  const qf = join(quizDir, `${id}.json`);
+  const qf = quizFile(id);
   if (!existsSync(qf)) { fail(id, 'missing quiz file'); continue; }
   let quiz;
   try { quiz = JSON.parse(readFileSync(qf, 'utf8')); } catch (e) { fail(`${id}.json`, `bad JSON: ${e.message}`); continue; }

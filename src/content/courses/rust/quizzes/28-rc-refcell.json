@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`Rc::clone(&a)` heap-এর পুরো ডেটার একটা নতুন কপি বানায়।",
+      "answer": false,
+      "explain": "Rc::clone শুধু reference count এক বাড়ায় আর একই ডেটার আরেকটা মালিক দেয়। তাই এটা খুব সস্তা।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(7);\n    let b = Rc::clone(&a);\n    let c = Rc::clone(&b);\n    println!(\"{}\", Rc::strong_count(&a));\n}",
+      "options": [
+        "3",
+        "1",
+        "2",
+        "7"
+      ],
+      "answer": 0,
+      "explain": "a, b, c তিনজনই একই value-র মালিক, তাই strong_count হলো 3।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(1);\n    {\n        let _b = Rc::clone(&a);\n    }\n    println!(\"{}\", Rc::strong_count(&a));\n}",
+      "options": [
+        "1",
+        "2",
+        "0",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "_b ভেতরের scope শেষে drop হয়, তখন গণনা আবার কমে 1 হয়ে যায়।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(5);\n    *a += 1;\n    println!(\"{a}\");\n}",
+      "answer": 5,
+      "explain": "Rc ভেতরের value শুধু পড়তে দেয়। *a += 1 লিখলে E0594: cannot assign to data in an Rc আসে। বদলাতে চাইলে Rc<RefCell<i32>> লাগবে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(String::from(\"hi\"));\n    c.borrow_mut().push('!');\n    println!(\"{}\", c.borrow());\n}",
+      "options": [
+        "hi!",
+        "hi",
+        "compile error: c is not mut",
+        "runtime panic"
+      ],
+      "answer": 0,
+      "explain": "RefCell-এ interior mutability আছে: c নিজে mut না হলেও borrow_mut() দিয়ে ভেতরের String বদলানো যায়।"
+    },
+    {
+      "type": "fill",
+      "q": "চলতে চলতে panic না করে পরীক্ষা করতে চাইলে কোন method বসবে?",
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(1);\n    let r = c.borrow();\n    println!(\"{}\", c.___().is_ok());\n    println!(\"{r}\");\n}",
+      "answer": [
+        "try_borrow_mut"
+      ],
+      "explain": "try_borrow_mut() panic না করে Result দেয়। এখানে একজন পাঠক (r) জীবিত, তাই লেখক হওয়া যায় না এবং ফল Err।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`RefCell`-এ borrow-এর নিয়ম ভাঙলে (যেমন দুটো `borrow_mut()` একসঙ্গে) compile error আসে।",
+      "answer": false,
+      "explain": "RefCell নিয়ম যাচাই করে প্রোগ্রাম চলার সময়। ভাঙলে compile হয়ে যায় ঠিকই, কিন্তু চালালে panic করে।"
+    },
+    {
+      "type": "order",
+      "q": "দুটো মালিক দিয়ে একই Vec-এ push করার কোড সাজাও।",
+      "lines": [
+        "`let a = Rc::new(RefCell::new(vec![1]));`",
+        "`let b = Rc::clone(&a);`",
+        "`b.borrow_mut().push(2);`",
+        "`println!(\"{:?}\", a.borrow());`"
+      ],
+      "explain": "আগে Rc<RefCell<...>> বানাও, তারপর clone করে দ্বিতীয় মালিক নাও। b দিয়ে বদলালে a-ও নতুন মান দেখে।"
+    },
+    {
+      "type": "choice",
+      "q": "দুটো `Rc` একে অপরকে ধরে থাকলে (চক্র) কী হয়, আর সমাধান কী?",
+      "options": [
+        "memory leak হয়, `Weak` দিয়ে একদিক ভাঙতে হয়",
+        "compiler চক্র ধরে error দেয়",
+        "দুটোই অটো মুছে যায়",
+        "panic হয়, `Cell` দিয়ে ঠিক হয়"
+      ],
+      "answer": 0,
+      "explain": "গণনা কখনো শূন্য হয় না বলে দুটোই চিরকাল heap-এ পড়ে থাকে। একদিকে Weak ব্যবহার করলে সেই দিক গণনায় ধরা হয় না, তাই চক্র ভাঙে।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(RefCell::new(0));\n    let w = Rc::downgrade(&a);\n    let b = Rc::clone(&a);\n    *b.borrow_mut() += 5;\n    drop(a);\n    let up = w.upgrade();\n    println!(\"{} {}\", up.is_some(), Rc::strong_count(&b));\n}",
+      "options": [
+        "true 2",
+        "false 1",
+        "true 1",
+        "false 2"
+      ],
+      "answer": 0,
+      "explain": "a drop হলেও b জীবিত, তাই value মরেনি। upgrade() সফল (Some) হয় আর নতুন একটা Rc (up) বানায়, ফলে এই মুহূর্তে মালিক b আর up মিলিয়ে 2।"
+    }
+  ]
+}

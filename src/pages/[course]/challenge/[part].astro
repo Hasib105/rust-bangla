@@ -1,0 +1,83 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { liveCourses } from '../../../data/courses';
+import { getCourseTree, getCards, bnN, baseUrl } from '../../../data/course';
+import { icon } from '../../../scripts/icons';
+
+export async function getStaticPaths() {
+  const out = [];
+  for (const c of liveCourses) {
+    const t = await getCourseTree(c.id);
+    out.push(...t.parts.map((p) => ({ params: { course: c.id, part: String(p.id) } })));
+  }
+  return out;
+}
+const course = await getCourseTree(Astro.params.course!);
+const part = course.parts.find((p) => String(p.id) === Astro.params.part)!;
+const pool = (await Promise.all(part.lessons.map((l) => getCards(l.id, l.short)))).flat();
+const nextPart = course.parts.find((p) => p.id === part.id + 1);
+const base = baseUrl();
+---
+<Base title={`পর্ব ${bnN(part.id)}-এর চ্যালেঞ্জ`} description={`${course.title}: ${part.title} পর্বের সব পাঠ থেকে ১০টা প্রশ্ন।`} nav="courses">
+  <section class="narrow challenge">
+    <div class="big" set:html={icon('trophy', 40)} />
+    <div class="crumbs" style="justify-content:center"><a href={`${base}${course.id}/`}>{course.title}</a><span>/</span><span>পর্ব {bnN(part.id)}</span></div>
+    <h1 class="page-title" style="margin-top:6px">{part.title}: চ্যালেঞ্জ</h1>
+    <p class="muted">এই পর্বের {bnN(part.lessons.length)}টা পাঠ থেকে এলোমেলো ১০টা প্রশ্ন। প্রতিটা একবারই আসবে। ৭টা ঠিক হলে জিতবে, প্রথম জয়ে +৫০ XP।</p>
+    <p class="muted" id="best"></p>
+    <button class="btn" id="fight">চ্যালেঞ্জ শুরু করো</button>
+  </section>
+  <div class="layer" id="layer" hidden></div>
+  <script is:inline type="application/json" id="boss-data" set:html={JSON.stringify({ key: `${course.id}:${part.id}`, pool, home: `${base}${course.id}/`, next: nextPart ? `${base}${course.id}/${nextPart.lessons[0].slug}/` : `${base}${course.id}/exam/` }).replace(/</g, '\\u003c')} />
+</Base>
+
+<script>
+  import { runQuiz } from '../../../scripts/quiz';
+  import { load, save, gain, bn } from '../../../scripts/store';
+  import { confetti, sound, announceBadges } from '../../../scripts/ui';
+  import { resultHtml } from '../../../scripts/finish';
+
+  const data = JSON.parse(document.getElementById('boss-data')!.textContent!);
+  const layer = document.getElementById('layer')!;
+  const showBest = () => {
+    const b = load().bosses[data.key];
+    document.getElementById('best')!.textContent = b === undefined ? '' : `তোমার সেরা: ${bn(b)}/১০${b >= 7 ? ' · জিতেছো' : ''}`;
+  };
+  showBest();
+  const pick = () => [...data.pool].sort(() => Math.random() - 0.5).slice(0, 10);
+
+  function start() {
+    layer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    runQuiz(layer, pick(), {
+      requeue: false,
+      onClose: () => { if (confirm('চ্যালেঞ্জ ছেড়ে যাবে?')) { layer.hidden = true; document.body.style.overflow = ''; } },
+      onFinish: ({ firstTry, total, missed }) => {
+        const s = load();
+        const old = s.bosses[data.key];
+        const won = firstTry >= 7;
+        const firstWin = won && !(old !== undefined && old >= 7);
+        s.bosses[data.key] = Math.max(firstTry, old ?? 0);
+        const xp = firstWin ? 50 : 0;
+        const nb = gain(s, xp);
+        save(s);
+        if (won) { sound('win'); confetti(140); } else sound('bad');
+        announceBadges(nb);
+        layer.innerHTML = resultHtml({
+          score: firstTry, total,
+          title: won ? 'চ্যালেঞ্জ জিতেছো!' : 'এবার হলো না',
+          sub: won ? 'এই পর্বের ধারণাগুলো তোমার ভালো বোঝা হয়েছে।' : 'ভুলগুলোর পাঠ আরেকবার দেখে আবার চেষ্টা করো। ৭টা ঠিক লাগবে।',
+          stats: [[`+${bn(xp)}`, 'XP'], [`${bn(s.bosses[data.key])}/১০`, 'সেরা স্কোর'], [bn(s.streak.count), 'দিন টানা']],
+          missed,
+          actions: `${won ? `<a class="btn" href="${data.next}">পরের পর্বে যাও</a>` : ''}
+            <button class="btn ${won ? 'alt' : ''}" id="again">আবার চেষ্টা করো</button>
+            <a class="btn alt" href="${data.home}">কোর্সে ফিরে যাও</a>`,
+        });
+        layer.scrollTop = 0;
+        document.getElementById('again')!.onclick = start;
+        showBest();
+      },
+    });
+  }
+  document.getElementById('fight')!.addEventListener('click', start);
+</script>

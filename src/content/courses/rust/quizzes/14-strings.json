@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এর `String` ভেতরে UTF-8 byte হিসেবে সাজানো থাকে।",
+      "answer": true,
+      "explain": "হ্যাঁ। তাই ASCII অক্ষর ১ byte, কিন্তু `é` ২ byte আর `🦀` ৪ byte নেয়।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let s = String::from(\"café\");\n    println!(\"{} {}\", s.len(), s.chars().count());\n}",
+      "options": [
+        "5 5",
+        "5 4",
+        "4 4",
+        "4 5"
+      ],
+      "answer": 1,
+      "explain": "`é` নেয় ২ byte, তাই len() = 5। কিন্তু অক্ষর মাত্র ৪টা, তাই chars().count() = 4।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let s = String::from(\"🦀\");\n    println!(\"{}\", s.len());\n}",
+      "options": [
+        "2",
+        "8",
+        "4",
+        "1"
+      ],
+      "answer": 2,
+      "explain": "🦀 একটা অক্ষর, কিন্তু UTF-8-এ ৪ byte লাগে। len() byte গোনে, তাই 4।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let s = String::from(\"rust\");\n    let first = s[0];\n    println!(\"{first}\");\n}",
+      "answer": 3,
+      "explain": "String-কে সংখ্যা দিয়ে index করা যায় না (E0277)। অক্ষর চাইলে `s.chars().next()` ব্যবহার করো।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let a = String::from(\"ab\");\n    let b = String::from(\"cd\");\n    let c = a + &b;\n    println!(\"{c} {b}\");\n}",
+      "options": [
+        "ab cd",
+        "abcd",
+        "compile error: b moved",
+        "abcd cd"
+      ],
+      "answer": 3,
+      "explain": "`+` বাঁ দিকের String-টা (a) নিয়ে নেয়, আর ডান দিক শুধু ধার নেয়। তাই b পরেও ব্যবহার করা যায়।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে `a` আর `b` দুটোই জোড়া লাগবে, কিন্তু কোনোটাই move হবে না?",
+      "code": "let a = String::from(\"x\");\nlet b = String::from(\"y\");\nlet c = ___!(\"{a}{b}\");\nprintln!(\"{c} {a} {b}\");",
+      "answer": [
+        "format"
+      ],
+      "explain": "format! ধার নিয়ে নতুন String বানায়, কিছু move করে না। println!-এর মতোই লেখা, শুধু print করার বদলে ফেরত দেয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let t = \"  a  b c \";\n    let n = t.split_whitespace().count();\n    println!(\"{n}\");\n}",
+      "options": [
+        "2",
+        "3",
+        "6",
+        "4"
+      ],
+      "answer": 1,
+      "explain": "split_whitespace একাধিক ফাঁকাকেও একটা ভাগ ধরে, আর শুরু-শেষের ফাঁকা বাদ দেয়। শব্দ তাই ৩টা: a, b, c।"
+    },
+    {
+      "type": "order",
+      "q": "\" 42 \" থেকে সংখ্যা বের করে দ্বিগুণ print করার ঠিক ক্রম সাজাও।",
+      "lines": [
+        "`let text = \"  42 \";`",
+        "`let clean = text.trim();`",
+        "`let n: i32 = clean.parse().unwrap();`",
+        "`println!(\"{}\", n * 2);`"
+      ],
+      "explain": "আগে ফাঁকা কাটো, তারপর parse করে সংখ্যা বানাও, তারপর হিসাব আর print।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`&s[0..2]` লিখলে 2 মানে প্রথম ২টা অক্ষর।",
+      "answer": false,
+      "explain": "সংখ্যাগুলো byte offset, অক্ষর নয়। ASCII text-এ মিলে যায়, কিন্তু অক্ষরের মাঝখানে কাটলে panic করবে।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "fn main() {\n    let s = String::from(\"a🦀b\");\n    println!(\"{} {}\", s.len(), s.chars().count());\n    println!(\"{:?}\", s.chars().nth(1));\n    println!(\"{}\", &s[0..1]);\n}",
+      "options": [
+        "6 3\nSome('b')\na",
+        "6 3\nSome('🦀')\na🦀",
+        "6 3\nSome('🦀')\na",
+        "3 3\nSome('🦀')\na"
+      ],
+      "answer": 2,
+      "explain": "1 + 4 + 1 = 6 byte, অক্ষর ৩টা। chars().nth(1) হলো দ্বিতীয় অক্ষর 🦀। আর byte 0..1 শুধু 'a'।"
+    }
+  ]
+}

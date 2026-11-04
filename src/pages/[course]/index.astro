@@ -1,0 +1,96 @@
+---
+import Base from '../../layouts/Base.astro';
+import { liveCourses } from '../../data/courses';
+import { getCourseTree, bnN, baseUrl } from '../../data/course';
+import { icon } from '../../scripts/icons';
+
+export function getStaticPaths() {
+  return liveCourses.map((c) => ({ params: { course: c.id } }));
+}
+const course = await getCourseTree(Astro.params.course!);
+const base = baseUrl();
+const url = (slug: string) => `${base}${course.id}/${slug}/`;
+---
+<Base title={`${course.title} কোর্স`} description={course.description} nav="courses">
+  <div class="wrap course">
+    <aside class="side">
+      <div class="box">
+        <div class="crumbs"><a href={base}>কোর্স</a></div>
+        <h1>{course.title}</h1>
+        <p>{course.description}</p>
+        <div class="prog"><span>অগ্রগতি</span><span><b data-done>০</b>/{bnN(course.lessons.length)}</span></div>
+        <div class="bar green"><i data-prog></i></div>
+        <a class="btn block" id="continue" href={url(course.lessons[0].slug)}>শুরু করো <Fragment set:html={icon('arrow', 18)} /></a>
+      </div>
+      <div class="box kv">
+        <div><b data-stat="xp">০</b><small>XP</small></div>
+        <div><b data-stat="streak">০</b><small>দিন টানা</small></div>
+        <div><b data-stat="level">১</b><small>লেভেল</small></div>
+      </div>
+      <a class="box exam" href={`${base}${course.id}/exam/`}>
+        <span class="ei" set:html={icon('trophy', 22)} />
+        <span><b>ফাইনাল পরীক্ষা</b><small>৩০টা প্রশ্ন, পাশ করলে সার্টিফিকেট</small></span>
+      </a>
+    </aside>
+
+    <div>
+      {course.parts.map((p) => (
+        <section class="part">
+          <div class="part-h"><span class="pn">পর্ব {bnN(p.id)}</span><h2>{p.title}</h2></div>
+          <p>{p.subtitle}</p>
+          <ol class="lessons" data-reveal>
+            {p.lessons.map((l) => (
+              <li>
+                <a class="lrow" href={url(l.slug)} data-key={l.key}>
+                  <span class="node">{bnN(l.order)}</span>
+                  <span class="t"><b>{l.title}</b><small>{l.summary}</small></span>
+                  <span class="m"><span class="min">{bnN(l.minutes)} মিনিট</span><span class="stars" data-stars></span></span>
+                </a>
+              </li>
+            ))}
+            <li>
+              <a class="lrow boss" href={`${base}${course.id}/challenge/${p.id}/`} data-boss={`${course.id}:${p.id}`}>
+                <span class="node" set:html={icon('trophy', 20)} />
+                <span class="t"><b>পর্ব-চ্যালেঞ্জ</b><small>পুরো পর্ব থেকে ১০টা প্রশ্ন, ৭টা ঠিক করলে জিতবে</small></span>
+                <span class="m" data-boss-score></span>
+              </a>
+            </li>
+          </ol>
+        </section>
+      ))}
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { load, bn } from '../../scripts/store';
+  import { icon } from '../../scripts/icons';
+  const s = load();
+  const rows = [...document.querySelectorAll<HTMLAnchorElement>('.lrow[data-key]')];
+  let done = 0;
+  rows.forEach((r) => {
+    const res = s.lessons[r.dataset.key!];
+    const st = r.querySelector('[data-stars]')!;
+    st.innerHTML = [1, 2, 3].map((k) => icon('star', 14, res && k <= res.stars ? 'on' : '')).join('');
+    if (!res) return;
+    done++;
+    r.classList.add('done');
+    r.querySelector('.node')!.innerHTML = icon('check', 20);
+  });
+  const next = rows.find((r) => !s.lessons[r.dataset.key!]);
+  const cont = document.getElementById('continue') as HTMLAnchorElement;
+  if (next) {
+    next.classList.add('next');
+    next.querySelector('.t b')!.insertAdjacentHTML('beforeend', '<span class="next-tag">পরেরটা</span>');
+    cont.href = next.href;
+    if (done) cont.firstChild!.textContent = 'চালিয়ে যাও ';
+  } else cont.firstChild!.textContent = 'আবার দেখো ';
+  document.querySelector('[data-done]')!.textContent = bn(done);
+  (document.querySelector('[data-prog]') as HTMLElement).style.width = (done / rows.length) * 100 + '%';
+  document.querySelectorAll<HTMLElement>('[data-boss]').forEach((b) => {
+    const sc = s.bosses[b.dataset.boss!];
+    if (sc === undefined) return;
+    if (sc >= 7) { b.classList.add('done'); }
+    b.querySelector('[data-boss-score]')!.textContent = `সেরা ${bn(sc)}/১০`;
+  });
+</script>

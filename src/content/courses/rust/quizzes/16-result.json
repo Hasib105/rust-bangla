@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`Result<T, E>`-এর দুটো রূপ আছে: `Ok(T)` আর `Err(E)`।",
+      "answer": true,
+      "explain": "Result একটা enum। সফল হলে Ok-এর ভেতরে মান থাকে, ব্যর্থ হলে Err-এর ভেতরে ভুলের কারণ।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let r = \"12\".parse::<i32>();\n    println!(\"{:?}\", r);\n}",
+      "options": [
+        "Err(12)",
+        "Ok(12)",
+        "12",
+        "Some(12)"
+      ],
+      "answer": 1,
+      "explain": "parse সফল হলে `Ok(মান)` ফেরত দেয়। {:?} দিয়ে print করলে Ok সহ দেখায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let n: i32 = \"abc\".parse().unwrap_or(5);\n    println!(\"{}\", n + 1);\n}",
+      "options": [
+        "panic করবে",
+        "compile error",
+        "6",
+        "1"
+      ],
+      "answer": 2,
+      "explain": "\"abc\" সংখ্যা নয়, তাই parse Err দেয়। unwrap_or(5) তখন ডিফল্ট 5 দেয়, আর 5 + 1 = 6।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn check(n: i32) -> Result<i32, String> {\n    if n > 0 {\n        Ok(n)\n    } else {\n        Err(String::from(\"bad\"))\n    }\n}\n\nfn main() {\n    println!(\"{:?} {:?}\", check(3), check(-3));\n}",
+      "options": [
+        "3 bad",
+        "Ok(3) Err(bad)",
+        "Ok(3) Ok(-3)",
+        "Ok(3) Err(\"bad\")"
+      ],
+      "answer": 3,
+      "explain": "{:?} String-কে উদ্ধৃতি চিহ্ন সহ দেখায়, তাই Err(\"bad\")। 3 ধনাত্মক বলে Ok, -3 নয় বলে Err।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let a = \"4\".parse::<i32>();\n    let b = a * 2;\n    println!(\"{b}\");\n}",
+      "answer": 3,
+      "explain": "a একটা `Result<i32, _>`, সংখ্যা নয়। তাই `a * 2` E0369 দেয়। আগে unwrap, unwrap_or বা match করে মান বের করতে হবে।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে parse ব্যর্থ হলে `0` পাওয়া যাবে?",
+      "code": "let n: i32 = \"x\".parse().___(0);\nprintln!(\"{n}\");",
+      "answer": [
+        "unwrap_or"
+      ],
+      "explain": "unwrap_or(ডিফল্ট) Ok হলে ভেতরের মান দেয়, Err হলে ডিফল্টটা দেয়। কখনো panic করে না।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`\"abc\".parse::<i32>().unwrap()` লিখলে প্রোগ্রাম চুপচাপ 0 দিয়ে চলতে থাকে।",
+      "answer": false,
+      "explain": "Err-এর উপর unwrap করলে প্রোগ্রাম panic করে থেমে যায়। ডিফল্ট চাইলে unwrap_or ব্যবহার করতে হবে।"
+    },
+    {
+      "type": "order",
+      "q": "`match` দিয়ে parse-এর ফল সামলানোর কোড ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`match \"7\".parse::<i32>() {`",
+        "`Ok(n) => println!(\"ok {n}\"),`",
+        "`Err(e) => println!(\"err {e}\"),`",
+        "`}`"
+      ],
+      "explain": "match-এর শুরু, তারপর Ok শাখা, তারপর Err শাখা, শেষে বন্ধনী। দুটো শাখাই থাকতে হবে, নইলে compiler আপত্তি করে।"
+    },
+    {
+      "type": "choice",
+      "q": "নিচের কোন ক্ষেত্রে `Result` ব্যবহার করা বেশি উপযুক্ত?",
+      "options": [
+        "একটা variable-এর নাম বদলানো",
+        "user-এর দেওয়া text সংখ্যা কি না যাচাই",
+        "Vec-এ শেষের পরে index করার bug",
+        "দুটো সংখ্যা যোগ করা"
+      ],
+      "answer": 1,
+      "explain": "user-এর input ভুল হতেই পারে, আর প্রোগ্রাম সেটা সামলে নিতে পারে। এটাই Result-এর কাজ। index-এর bug হলো panic-এর জায়গা।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "fn half(s: &str) -> Result<i32, String> {\n    match s.parse::<i32>() {\n        Ok(n) => {\n            if n % 2 == 0 {\n                Ok(n / 2)\n            } else {\n                Err(format!(\"{n} is odd\"))\n            }\n        }\n        Err(_) => Err(String::from(\"nan\")),\n    }\n}\n\nfn main() {\n    for s in [\"8\", \"7\", \"x\"] {\n        match half(s) {\n            Ok(v) => print!(\"{v} \"),\n            Err(e) => print!(\"[{e}] \"),\n        }\n    }\n}",
+      "options": [
+        "4 3 [nan]",
+        "[8 is even] [7 is odd] [nan]",
+        "4 [7 is odd] [nan]",
+        "4 [7 is odd] 0"
+      ],
+      "answer": 2,
+      "explain": "\"8\" জোড়, তাই Ok(4)। \"7\" বিজোড়, তাই Err(\"7 is odd\")। \"x\" সংখ্যা নয়, তাই Err(\"nan\")। print! নতুন লাইন দেয় না, তাই সব এক লাইনে।"
+    }
+  ]
+}

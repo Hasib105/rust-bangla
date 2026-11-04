@@ -1,0 +1,99 @@
+---
+import Base from '../../layouts/Base.astro';
+import { liveCourses } from '../../data/courses';
+import { getCourseTree, getCards, bnN, baseUrl } from '../../data/course';
+import { icon } from '../../scripts/icons';
+
+export function getStaticPaths() {
+  return liveCourses.map((c) => ({ params: { course: c.id } }));
+}
+const course = await getCourseTree(Astro.params.course!);
+const pool = (await Promise.all(course.lessons.map((l) => getCards(l.id, l.short)))).flat();
+const base = baseUrl();
+---
+<Base title={`${course.title}: ফাইনাল পরীক্ষা`} description={`${course.title} কোর্সের ${bnN(course.lessons.length)}টা পাঠ থেকে ৩০টা প্রশ্ন। ৭০% পেলে সার্টিফিকেট।`} nav="courses">
+  <section class="narrow challenge" id="intro">
+    <div class="big" set:html={icon('trophy', 40)} />
+    <div class="crumbs" style="justify-content:center"><a href={`${base}${course.id}/`}>{course.title}</a></div>
+    <h1 class="page-title" style="margin-top:6px">ফাইনাল পরীক্ষা</h1>
+    <p class="muted">পুরো কোর্স থেকে এলোমেলো ৩০টা প্রশ্ন। ২১টা (৭০%) ঠিক হলে পাশ, তখন নিজের নামে সার্টিফিকেট। প্রথমবার পাশ করলে +২০০ XP।</p>
+    <div class="panel" style="text-align:left;margin:20px 0">
+      <label>সার্টিফিকেটে তোমার নাম
+        <input id="name" maxlength="40" placeholder="তোমার নাম" style="display:block;width:100%;margin-top:6px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--text);font:600 18px var(--font)" />
+      </label>
+    </div>
+    <p class="muted" id="best"></p>
+    <button class="btn" id="go">পরীক্ষা শুরু করো</button>
+  </section>
+  <section class="narrow" id="cert-wrap" hidden>
+    <div class="cert">
+      <img src={base + 'logo-mark-256.png'} alt="" />
+      <div style="letter-spacing:3px;font-weight:600;margin-top:8px">RUST বাংলা</div>
+      <h2>সার্টিফিকেট</h2>
+      <div>এই মর্মে প্রত্যয়ন করা যাচ্ছে যে</div>
+      <div class="name" id="cert-name"></div>
+      <div>Rust বাংলা-র <b>{course.title}</b> কোর্সের ফাইনাল পরীক্ষায় <b id="cert-score"></b> পেয়ে উত্তীর্ণ হয়েছেন।</div>
+      <div style="margin-top:18px;font-size:14px">তারিখ: <span id="cert-date"></span></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn" onclick="window.print()"><Fragment set:html={icon('print', 18)} /> প্রিন্ট / PDF</button>
+      <a class="btn alt" href={`${base}${course.id}/`}>কোর্সে ফিরে যাও</a>
+    </div>
+  </section>
+  <div class="layer" id="layer" hidden></div>
+  <script is:inline type="application/json" id="exam-data" set:html={JSON.stringify({ course: course.id, pool, home: `${base}${course.id}/` }).replace(/</g, '\\u003c')} />
+</Base>
+
+<script>
+  import { runQuiz } from '../../scripts/quiz';
+  import { load, save, gain, bn } from '../../scripts/store';
+  import { confetti, sound, announceBadges } from '../../scripts/ui';
+  import { resultHtml } from '../../scripts/finish';
+
+  const data = JSON.parse(document.getElementById('exam-data')!.textContent!);
+  const layer = document.getElementById('layer')!;
+  const nameEl = document.getElementById('name') as HTMLInputElement;
+  const passed = (e?: { score: number; total: number }) => !!e && e.score / e.total >= 0.7;
+  if (load().exams[data.course]?.name) nameEl.value = load().exams[data.course].name!;
+
+  function showCert() {
+    const e = load().exams[data.course];
+    if (!passed(e)) return;
+    document.getElementById('cert-wrap')!.hidden = false;
+    document.getElementById('cert-name')!.textContent = e.name || 'Rust শিক্ষার্থী';
+    document.getElementById('cert-score')!.textContent = `${bn(e.score)}/${bn(e.total)}`;
+    document.getElementById('cert-date')!.textContent = new Date(e.at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('best')!.textContent = `তুমি পাশ করেছো (${bn(e.score)}/${bn(e.total)})। চাইলে আবার দিতে পারো।`;
+  }
+  showCert();
+
+  document.getElementById('go')!.addEventListener('click', () => {
+    layer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    runQuiz(layer, [...data.pool].sort(() => Math.random() - 0.5).slice(0, 30), {
+      requeue: false,
+      onClose: () => { if (confirm('পরীক্ষা ছেড়ে যাবে?')) { layer.hidden = true; document.body.style.overflow = ''; } },
+      onFinish: ({ firstTry, total, missed }) => {
+        const s = load();
+        const pass = firstTry / total >= 0.7;
+        const firstPass = pass && !passed(s.exams[data.course]);
+        const old = s.exams[data.course];
+        if (!old || firstTry >= old.score) s.exams[data.course] = { score: firstTry, total, name: nameEl.value.trim(), at: new Date().toISOString() };
+        const nb = gain(s, firstPass ? 200 : 0);
+        save(s);
+        if (pass) { sound('win'); confetti(180); } else sound('bad');
+        announceBadges(nb);
+        layer.innerHTML = resultHtml({
+          score: firstTry, total,
+          title: pass ? 'অভিনন্দন, তুমি পাশ করেছো!' : 'এবার হলো না, আবার চেষ্টা করো',
+          stats: [[`${bn(Math.round((firstTry / total) * 100))}%`, 'স্কোর'], [`+${bn(firstPass ? 200 : 0)}`, 'XP'], ['৭০%', 'পাশ নম্বর']],
+          missed,
+          actions: `${pass ? '<button class="btn" id="see">সার্টিফিকেট দেখো</button>' : ''}<a class="btn alt" href="${data.home}">কোর্সে ফিরে যাও</a>`,
+        });
+        layer.scrollTop = 0;
+        const see = document.getElementById('see');
+        if (see) see.onclick = () => { layer.hidden = true; document.body.style.overflow = ''; showCert(); document.getElementById('cert-wrap')!.scrollIntoView(); };
+      },
+    });
+  });
+</script>

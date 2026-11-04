@@ -1,0 +1,109 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "HashMap-এ for loop চালালে key-গুলো সবসময় insert করার ক্রমে পাওয়া যায়।",
+      "answer": false,
+      "explain": "HashMap-এর ক্রম অনির্দিষ্ট। সাজানো ক্রম চাইলে sort করো, অথবা BTreeMap ব্যবহার করো।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut m = HashMap::new();\n    m.insert(\"a\", 1);\n    m.insert(\"a\", 2);\n    println!(\"{} {}\", m.len(), m[\"a\"]);\n}",
+      "options": [
+        "2 1",
+        "1 2",
+        "2 2",
+        "1 1"
+      ],
+      "answer": 1,
+      "explain": "একই key-তে দ্বিতীয়বার insert করলে নতুন entry হয় না, পুরোনো value বদলে যায়। তাই len = 1, value = 2।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut m = HashMap::new();\n    m.insert(\"x\", 10);\n    println!(\"{:?} {:?}\", m.get(\"x\"), m.get(\"y\"));\n}",
+      "options": [
+        "Some(10) Some(0)",
+        "Some(10) panic",
+        "Some(10) None",
+        "10 None"
+      ],
+      "answer": 2,
+      "explain": "get সবসময় Option দেয়। key থাকলে Some(value), না থাকলে None, কখনো panic করে না।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে প্রতিটা শব্দের সংখ্যা গোনা হবে?",
+      "code": "let mut counts = HashMap::new();\nfor w in [\"a\", \"b\", \"a\"] {\n    *counts.___(w).or_insert(0) += 1;\n}",
+      "answer": [
+        "entry"
+      ],
+      "explain": "entry(key) দেখে key আছে কি না। or_insert(0) না থাকলে 0 বসায়, তারপর `+= 1` সেই value বাড়ায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::collections::BTreeMap;\n\nfn main() {\n    let mut m = BTreeMap::new();\n    m.insert(3, \"c\");\n    m.insert(1, \"a\");\n    m.insert(2, \"b\");\n    for (k, v) in &m {\n        print!(\"{k}{v} \");\n    }\n}",
+      "options": [
+        "3c 1a 2b",
+        "a1 b2 c3",
+        "3c 2b 1a",
+        "1a 2b 3c"
+      ],
+      "answer": 3,
+      "explain": "BTreeMap key-কে ছোট থেকে বড় ক্রমে সাজিয়ে রাখে, insert যে ক্রমেই হোক। print হয় `{k}{v} ` ছকে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::collections::HashSet;\n\nfn main() {\n    let mut s = HashSet::new();\n    let a = s.insert(5);\n    let b = s.insert(5);\n    println!(\"{a} {b} {}\", s.len());\n}",
+      "options": [
+        "false false 1",
+        "true false 1",
+        "true true 2",
+        "true false 2"
+      ],
+      "answer": 1,
+      "explain": "প্রথম insert নতুন, তাই true। দ্বিতীয়বার 5 আগে থেকেই আছে, তাই false আর set-এ থাকে মাত্র একটা element।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let key = String::from(\"id\");\n    let mut m = HashMap::new();\n    m.insert(key, 7);\n    println!(\"{}\", key);\n}",
+      "answer": 7,
+      "explain": "লাইন ৬-এ insert করার সময় key map-এর কাছে move হয়ে গেছে। তাই লাইন ৭-এ ব্যবহার করলে E0382 আসে।"
+    },
+    {
+      "type": "order",
+      "q": "শব্দ গোনার প্রোগ্রামের লাইনগুলো ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`let mut counts = HashMap::new();`",
+        "`for w in text.split_whitespace() {`",
+        "`*counts.entry(w).or_insert(0) += 1;`",
+        "`}`",
+        "`println!(\"{}\", counts.len());`"
+      ],
+      "explain": "আগে খালি map, তারপর loop-এর ভেতরে প্রতিটা শব্দ entry দিয়ে গোনা, loop শেষে ফল দেখানো।"
+    },
+    {
+      "type": "truefalse",
+      "q": "key না থাকলে `map[\"missing\"]` লিখলে `None` পাওয়া যায়।",
+      "answer": false,
+      "explain": "index করলে সরাসরি value চাওয়া হয়, তাই key না থাকলে panic। None পেতে হলে `get` ব্যবহার করো।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "use std::collections::BTreeMap;\n\nfn main() {\n    let mut m = BTreeMap::new();\n    for w in \"to be or not to be\".split_whitespace() {\n        *m.entry(w).or_insert(0) += 1;\n    }\n    let top = m.iter().filter(|(_, n)| **n > 1).count();\n    println!(\"{} {}\", m.len(), top);\n    println!(\"{:?}\", m.get(\"be\"));\n}",
+      "options": [
+        "4 2\nSome(1)",
+        "4 4\nSome(2)",
+        "4 2\nSome(2)",
+        "6 2\nSome(2)"
+      ],
+      "answer": 2,
+      "explain": "আলাদা শব্দ ৪টা: to, be, or, not। দুবার আছে `to` আর `be`, তাই top = 2। `be` আছে ২ বার।"
+    }
+  ]
+}

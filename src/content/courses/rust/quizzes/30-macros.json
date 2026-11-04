@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`println!`-এর শেষের `!` বলে দেয় এটা সাধারণ function নয়, একটা macro।",
+      "answer": true,
+      "explain": "! দেখলেই বুঝবে macro। macro compile-এর সময় কোডে বদলে যায়, তাই সে যত খুশি argument নিতে পারে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "macro_rules! twice {\n    ($x:expr) => {\n        $x + $x\n    };\n}\n\nfn main() {\n    println!(\"{}\", twice!(5));\n}",
+      "options": [
+        "10",
+        "55",
+        "5",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "macro twice!(5)-কে 5 + 5 বানায়, যার ফল 10।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "macro_rules! square {\n    ($x:expr) => {\n        $x * $x\n    };\n}\n\nfn main() {\n    println!(\"{}\", square!(1 + 2));\n}",
+      "options": [
+        "9",
+        "5",
+        "3",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "expr designator পুরো 1 + 2-কে একটা expression হিসেবে ধরে, তাই (1 + 2) * (1 + 2) = 9। গুণ আগে হওয়ার ভুল হয় না।"
+    },
+    {
+      "type": "fill",
+      "q": "macro-র pattern-এ একটা expression ধরতে `$x:` এর পর কোন designator বসবে?",
+      "code": "macro_rules! show {\n    ($x:___) => {\n        println!(\"{}\", $x)\n    };\n}\n\nfn main() {\n    show!(2 + 3);\n}",
+      "answer": [
+        "expr"
+      ],
+      "explain": "expr যেকোনো expression ধরে। ident শুধু একটা নাম ধরে, তাই 2 + 3-এর জন্য চলে না।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "macro_rules! make_fn {\n    ($name:ident, $v:expr) => {\n        fn $name() -> i32 {\n            $v\n        }\n    };\n}\n\nmake_fn!(seven, 3 + 4);\n\nfn main() {\n    println!(\"{}\", seven());\n}",
+      "options": [
+        "7",
+        "34",
+        "3",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "ident দিয়ে macro নতুন function-এর নাম পায়। তৈরি হয় fn seven() -> i32 { 3 + 4 }, তাই 7।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "macro_rules! square {\n    ($x:expr) => {\n        $x * $x\n    };\n}\n\nfn main() {\n    println!(\"{}\", square!());\n}",
+      "answer": 8,
+      "explain": "square!() কোনো argument ছাড়া ডাকা হয়েছে, কিন্তু macro একটা expression চায়। compiler বলে unexpected end of macro invocation।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন ক্ষেত্রে সাধারণ function না লিখে macro বেছে নেওয়া ঠিক?",
+      "options": [
+        "argument সংখ্যা বদলায়, যেমন `vec![1, 2, 3]`",
+        "দুটো `i32` যোগ করতে",
+        "একটা string-এর দৈর্ঘ্য বের করতে",
+        "কোনো সময়ই না"
+      ],
+      "answer": 0,
+      "explain": "function-এর argument সংখ্যা নির্দিষ্ট। argument সংখ্যা বদলালে বা নতুন কোড-কাঠামো বানাতে হলে macro। বাকি কাজ function-এই ভালো।"
+    },
+    {
+      "type": "order",
+      "q": "যত খুশি argument নেওয়া `print_all!` macro-র কোড সাজাও।",
+      "lines": [
+        "`macro_rules! print_all {`",
+        "`    ($($x:expr),*) => {`",
+        "`        $( println!(\"{}\", $x); )*`",
+        "`    };`",
+        "`}`"
+      ],
+      "explain": "আগে macro-র নাম, তারপর pattern (repetition সহ), তারপর => দিয়ে কোড, যেখানে একই repetition-এ প্রতিটা argument-এর জন্য println! বসে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`#[derive(Debug)]` একটা procedural macro, যা compile-এর সময় struct দেখে `Debug`-এর impl লিখে দেয়।",
+      "answer": true,
+      "explain": "derive আসলে একটা আলাদা Rust প্রোগ্রাম, যা তোমার type-এর কোড পড়ে impl block বানায়। তাই হাতে লিখতে হয় না।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "macro_rules! sum {\n    () => { 0 };\n    ($x:expr $(, $rest:expr)*) => {\n        $x + sum!($($rest),*)\n    };\n}\n\nfn main() {\n    println!(\"{} {} {}\", sum!(), sum!(5), sum!(1, 2, 3));\n}",
+      "options": [
+        "0 5 6",
+        "0 5 3",
+        "0 0 6",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "sum!() শূন্য। sum!(5) হয় 5 + sum!() = 5 + 0। sum!(1, 2, 3) হয় 1 + (2 + (3 + 0)) = 6। macro নিজেকে ডেকে ডেকে argument কমায়।"
+    }
+  ]
+}

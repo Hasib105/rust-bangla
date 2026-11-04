@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`Vec<Box<dyn Shape>>`-এ `Circle` আর `Square` দুটো আলাদা struct একসাথে রাখা যায়।",
+      "answer": true,
+      "explain": "দুটোই Shape trait মানে। Box<dyn Shape> সবাইকে একই মাপের pointer বানায়, তাই Vec-এ রাখতে সমস্যা নেই।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "trait Speak {\n    fn speak(&self) -> String;\n}\n\nstruct Dog;\nstruct Cat;\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        String::from(\"Woof\")\n    }\n}\n\nimpl Speak for Cat {\n    fn speak(&self) -> String {\n        String::from(\"Meow\")\n    }\n}\n\nfn main() {\n    let pets: Vec<Box<dyn Speak>> = vec![Box::new(Dog), Box::new(Cat)];\n    for p in &pets {\n        println!(\"{}\", p.speak());\n    }\n}",
+      "options": [
+        "compile error",
+        "Woof\nMeow",
+        "Meow\nWoof",
+        "Woof\nWoof"
+      ],
+      "answer": 1,
+      "explain": "Vec-এ Dog আগে, Cat পরে। প্রতিটা element-এর নিজস্ব speak() চলে (dynamic dispatch), তাই Woof Meow।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "trait Area {\n    fn area(&self) -> u32;\n}\n\nstruct Sq(u32);\nstruct Rect(u32, u32);\n\nimpl Area for Sq {\n    fn area(&self) -> u32 {\n        self.0 * self.0\n    }\n}\n\nimpl Area for Rect {\n    fn area(&self) -> u32 {\n        self.0 * self.1\n    }\n}\n\nfn show(x: &dyn Area) {\n    println!(\"{}\", x.area());\n}\n\nfn main() {\n    show(&Sq(4));\n    show(&Rect(2, 5));\n}",
+      "options": [
+        "16 then 7",
+        "compile error",
+        "16 then 10",
+        "8 then 10"
+      ],
+      "answer": 2,
+      "explain": "Sq(4) এর area 4 * 4 = 16, আর Rect(2, 5)-এর 2 * 5 = 10। &dyn Area দিয়ে দুটোই একই function-এ দেওয়া গেছে।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "trait Shape {\n    fn area(&self) -> f64;\n}\n\nstruct Sq(f64);\n\nimpl Shape for Sq {\n    fn area(&self) -> f64 {\n        self.0 * self.0\n    }\n}\n\nfn main() {\n    let shapes: Vec<dyn Shape> = Vec::new();\n    println!(\"{}\", shapes.len());\n}",
+      "answer": 14,
+      "explain": "dyn Shape-এর size compile time-এ জানা যায় না, তাই Vec<dyn Shape> চলে না। Vec<Box<dyn Shape>> লিখতে হয়।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে এই Vec compile হবে?",
+      "code": "let shapes: Vec<Box<___ Shape>> = Vec::new();",
+      "answer": [
+        "dyn"
+      ],
+      "explain": "trait object লেখার keyword হলো dyn। Box<dyn Shape> মানে \"Shape মানে এমন যেকোনো type-এর Box\"।"
+    },
+    {
+      "type": "choice",
+      "q": "Dynamic dispatch-এ কোন method চলবে সেটা কীভাবে ঠিক হয়?",
+      "options": [
+        "সবসময় trait-এর default method চলে",
+        "runtime-এ vtable দেখে",
+        "compile time-এ monomorphization করে",
+        "programmer নিজে match দিয়ে বেছে দেয়"
+      ],
+      "answer": 1,
+      "explain": "trait object-এ vtable-এর একটা pointer থাকে। runtime-এ সেই তালিকা দেখে সঠিক method খুঁজে চালানো হয়।"
+    },
+    {
+      "type": "order",
+      "q": "trait object ব্যবহারের code ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`trait Animal { fn sound(&self) -> String; }`",
+        "`struct Cow;`",
+        "`impl Animal for Cow { fn sound(&self) -> String { String::from(\"Moo\") } }`",
+        "`let farm: Vec<Box<dyn Animal>> = vec![Box::new(Cow)];`",
+        "`for a in &farm { println!(\"{}\", a.sound()); }`"
+      ],
+      "explain": "trait আর type আগে, তারপর impl। এরপর Box<dyn Animal>-এর Vec বানিয়ে তার ওপর loop চালানো যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "trait Score {\n    fn points(&self) -> i32;\n}\n\nstruct Goal;\nstruct Penalty;\n\nimpl Score for Goal {\n    fn points(&self) -> i32 {\n        3\n    }\n}\n\nimpl Score for Penalty {\n    fn points(&self) -> i32 {\n        -1\n    }\n}\n\nfn main() {\n    let events: Vec<Box<dyn Score>> = vec![\n        Box::new(Goal),\n        Box::new(Penalty),\n        Box::new(Goal),\n    ];\n    let total: i32 = events.iter().map(|e| e.points()).sum();\n    println!(\"{total}\");\n}",
+      "options": [
+        "6",
+        "7",
+        "compile error",
+        "5"
+      ],
+      "answer": 3,
+      "explain": "3 + (-1) + 3 = 5। map দিয়ে প্রতিটা object-এর points() ডাকা হয়েছে, আর sum সব যোগ করেছে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "generic function (`fn f<T: Trait>`) আর `&dyn Trait` দুটোই একই ভাবে runtime-এ vtable দিয়ে method খোঁজে।",
+      "answer": false,
+      "explain": "generic হলো static dispatch: compile time-এ type ঠিক হয়, vtable লাগে না। শুধু dyn Trait-এ vtable ব্যবহার হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "trait Op {\n    fn apply(&self, x: i32) -> i32;\n}\n\nstruct Add(i32);\nstruct Mul(i32);\n\nimpl Op for Add {\n    fn apply(&self, x: i32) -> i32 {\n        x + self.0\n    }\n}\n\nimpl Op for Mul {\n    fn apply(&self, x: i32) -> i32 {\n        x * self.0\n    }\n}\n\nfn main() {\n    let pipeline: Vec<Box<dyn Op>> = vec![\n        Box::new(Add(2)),\n        Box::new(Mul(5)),\n        Box::new(Add(1)),\n    ];\n    let mut v = 3;\n    for op in &pipeline {\n        v = op.apply(v);\n    }\n    println!(\"{v}\");\n}",
+      "options": [
+        "36",
+        "26",
+        "20",
+        "18"
+      ],
+      "answer": 1,
+      "explain": "ধাপে ধাপে: 3 + 2 = 5, তারপর 5 * 5 = 25, তারপর 25 + 1 = 26। প্রতিটা ধাপে আলাদা type-এর apply চলেছে।"
+    }
+  ]
+}

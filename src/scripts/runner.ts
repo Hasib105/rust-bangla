@@ -1,6 +1,7 @@
 // ▶ Run buttons on lesson code. Code is sent to the official Rust Playground (play.rust-lang.org).
 import { load, save, gain } from './store';
 import { announceBadges } from './ui';
+import { icon } from './icons';
 
 const API = 'https://play.rust-lang.org/execute';
 
@@ -36,10 +37,10 @@ export function initRunners(scope: ParentNode = document) {
     const tools = document.createElement('div');
     tools.className = 'code-tools';
     tools.innerHTML = `
-      <button class="edit" type="button">✏️ এডিট</button>
-      <button class="reset" type="button" hidden>↺ আগের মতো</button>
-      <button class="copy" type="button">📋 কপি</button>
-      <button class="run" type="button">▶ চালাও</button>`;
+      <button class="edit" type="button">${icon('edit', 15)} এডিট</button>
+      <button class="reset" type="button" hidden>${icon('repeat', 15)} আগের মতো</button>
+      <button class="copy" type="button">${icon('copy', 15)} কপি</button>
+      <button class="run" type="button">${icon('play', 15)} চালাও</button>`;
     pre.after(tools);
     const out = document.createElement('div');
     out.className = 'run-out';
@@ -55,7 +56,7 @@ export function initRunners(scope: ParentNode = document) {
       const on = pre.getAttribute('contenteditable') !== 'true';
       pre.setAttribute('contenteditable', on ? 'true' : 'false');
       pre.spellcheck = false;
-      edit.textContent = on ? '✔ এডিট শেষ' : '✏️ এডিট';
+      edit.innerHTML = on ? `${icon('check', 15)} এডিট শেষ` : `${icon('edit', 15)} এডিট`;
       reset.hidden = false;
       if (on) pre.focus();
     };
@@ -63,18 +64,18 @@ export function initRunners(scope: ParentNode = document) {
       const c = pre.querySelector('code');
       if (c) c.innerHTML = original;
       pre.setAttribute('contenteditable', 'false');
-      edit.textContent = '✏️ এডিট';
+      edit.innerHTML = `${icon('edit', 15)} এডিট`;
       reset.hidden = true;
       out.hidden = true;
     };
     tools.querySelector<HTMLButtonElement>('.copy')!.onclick = async (e) => {
       const b = e.currentTarget as HTMLButtonElement;
-      try { await navigator.clipboard.writeText(code()); b.textContent = '✔ কপি হয়েছে'; } catch { b.textContent = '✗'; }
-      setTimeout(() => (b.textContent = '📋 কপি'), 1500);
+      try { await navigator.clipboard.writeText(code()); b.innerHTML = `${icon('check', 15)} কপি হয়েছে`; } catch { b.textContent = 'কপি হয়নি'; }
+      setTimeout(() => (b.innerHTML = `${icon('copy', 15)} কপি`), 1500);
     };
     run.onclick = async () => {
       run.disabled = true;
-      run.textContent = '⏳ চলছে...';
+      run.textContent = 'চলছে...';
       out.hidden = false;
       out.className = 'run-out';
       out.innerHTML = '<span class="lbl">compile হচ্ছে (Rust Playground)...</span>';
@@ -85,7 +86,7 @@ export function initRunners(scope: ParentNode = document) {
         out.innerHTML = '';
         const lbl = document.createElement('span');
         lbl.className = 'lbl';
-        lbl.textContent = r.success ? '✅ আউটপুট' : '❌ compiler বলছে';
+        lbl.textContent = r.success ? 'আউটপুট' : 'compiler বলছে';
         out.append(lbl, document.createTextNode(r.success ? r.stdout || '(কিছু print হয়নি)' : err || r.stdout));
         if (r.success && err) {
           const w = document.createElement('div');
@@ -102,7 +103,7 @@ export function initRunners(scope: ParentNode = document) {
         out.textContent = `Playground-এ পৌঁছানো যায়নি (${(e as Error).message})। ইন্টারনেট চেক করে আবার চেষ্টা করো।`;
       } finally {
         run.disabled = false;
-        run.textContent = '▶ চালাও';
+        run.innerHTML = `${icon('play', 15)} চালাও`;
       }
     };
   });

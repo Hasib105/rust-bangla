@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এ module-এর ভেতরের জিনিস ডিফল্টে private।",
+      "answer": true,
+      "explain": "হ্যাঁ। বাইরে থেকে ব্যবহার করতে দিতে চাইলে স্পষ্ট করে `pub` লিখতে হয়। এতে ভুল করে কিছু খুলে যাওয়ার ভয় কমে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "mod math {\n    pub fn add(a: i32, b: i32) -> i32 {\n        a + b\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::add(2, 3));\n}",
+      "options": [
+        "math::add",
+        "5",
+        "23",
+        "compile error: add is private"
+      ],
+      "answer": 1,
+      "explain": "`add` pub, তাই `math::add` path দিয়ে বাইরে থেকে ডাকা যায়। 2 + 3 = 5।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "mod vault {\n    fn open() -> i32 {\n        1\n    }\n}\n\nfn main() {\n    println!(\"{}\", vault::open());\n}",
+      "answer": 8,
+      "explain": "`open` pub নয়, তাই vault-এর বাইরে (main থেকে) ডাকা যায় না। compiler E0603: function `open` is private দেখায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "mod outer {\n    fn base() -> i32 {\n        10\n    }\n\n    pub mod inner {\n        pub fn value() -> i32 {\n            super::base() + 1\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", outer::inner::value());\n}",
+      "options": [
+        "compile error: base is private",
+        "1",
+        "11",
+        "10"
+      ],
+      "answer": 2,
+      "explain": "`inner` হলো `outer`-এর child, আর child parent-এর private জিনিসও দেখতে পায়। `super::base()` মানে উপরের module-এর base, তাই 10 + 1 = 11।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে `shapes::square::area` কে শুধু `area` নামে ডাকা যাবে?",
+      "code": "mod shapes {\n    pub mod square {\n        pub fn area(s: i32) -> i32 {\n            s * s\n        }\n    }\n}\n\n___ shapes::square::area;\n\nfn main() {\n    println!(\"{}\", area(3));\n}",
+      "answer": [
+        "use"
+      ],
+      "explain": "`use path;` একটা ছোট নাম বসিয়ে দেয়। এরপর পুরো path না লিখে সরাসরি `area(3)` ডাকা যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "mod a {\n    pub fn hi() -> &'static str {\n        \"a\"\n    }\n}\n\nmod b {\n    pub fn hi() -> &'static str {\n        \"b\"\n    }\n}\n\nuse a::hi as first;\nuse b::hi as second;\n\nfn main() {\n    println!(\"{}{}\", second(), first());\n}",
+      "options": [
+        "ab",
+        "bb",
+        "compile error: duplicate name",
+        "ba"
+      ],
+      "answer": 3,
+      "explain": "`as` দিয়ে একই নামের দুটো function-কে আলাদা নাম দেওয়া হয়েছে। second() হলো b::hi, first() হলো a::hi, তাই print হয় ba।"
+    },
+    {
+      "type": "choice",
+      "q": "নিচের কোন ফাইলে `mod utils;` লিখলে Rust `src/utils.rs` খুঁজে নেবে?",
+      "options": [
+        "`target/debug`",
+        "`src/main.rs`",
+        "`Cargo.toml`",
+        "`Cargo.lock`"
+      ],
+      "answer": 1,
+      "explain": "`mod utils;` Rust কোডের লাইন, তাই এটা `main.rs` বা `lib.rs`-এর মতো .rs ফাইলে লেখা হয়। Rust তখন `src/utils.rs` বা `src/utils/mod.rs` পড়ে।"
+    },
+    {
+      "type": "order",
+      "q": "বাইরের crate (যেমন serde) নিজের প্রজেক্টে আনার ধাপগুলো ক্রমে সাজাও।",
+      "lines": [
+        "`cargo new my_app`",
+        "`cargo add serde`",
+        "কোডে `use serde::Serialize;` লেখো",
+        "`cargo run`"
+      ],
+      "explain": "আগে প্রজেক্ট, তারপর dependency যোগ (Cargo.toml বদলায়), তারপর কোডে use, শেষে run। তখন Cargo crate নামিয়ে compile করে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`Cargo.lock` ফাইল মনে রাখে প্রতিটা dependency-র ঠিক কোন version ব্যবহার হয়েছে।",
+      "answer": true,
+      "explain": "হ্যাঁ। এর ফলে অন্য মেশিনে বা পরে build করলেও একই version-এর কোড আসে, আর ফল একই থাকে।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "mod game {\n    pub struct Player {\n        pub name: String,\n        score: u32,\n    }\n\n    impl Player {\n        pub fn new(name: &str) -> Player {\n            Player { name: name.to_string(), score: 0 }\n        }\n\n        pub fn win(&mut self) {\n            self.score += 10;\n        }\n\n        pub fn score(&self) -> u32 {\n            self.score\n        }\n    }\n}\n\nfn main() {\n    let mut p = game::Player::new(\"Rina\");\n    p.win();\n    p.win();\n    println!(\"{} {}\", p.name, p.score());\n}",
+      "options": [
+        "Rina 10",
+        "compile error: score is private",
+        "Rina 20",
+        "Rina 0"
+      ],
+      "answer": 2,
+      "explain": "`score` field private, কিন্তু আমরা সরাসরি ছুঁইনি। pub method `win` আর `score()` দিয়ে কাজ করেছি। দুবার win মানে 10 + 10 = 20।"
+    }
+  ]
+}

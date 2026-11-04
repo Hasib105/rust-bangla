@@ -1,10 +1,10 @@
 ---
 import '../styles/global.css';
-import '../styles/game.css';
-import { site } from '../data/parts';
+import { site } from '../data/courses';
+import { icon } from '../scripts/icons';
 
-interface Props { title?: string; description?: string; nav?: 'home' | 'profile' | 'exam' | 'docs' }
-const { title, description = 'শূন্য থেকে Advanced Rust শেখো বাংলায়, খেলতে খেলতে। ৪০টা ছোট পাঠ, কুইজ, XP, ব্যাজ আর ফাইনাল পরীক্ষা। লগইন লাগে না, পুরোপুরি ফ্রি।', nav } = Astro.props;
+interface Props { title?: string; description?: string; nav?: 'courses' | 'profile' | 'docs' }
+const { title, description = 'Rust শেখো বাংলায়, খেলতে খেলতে। ছোট পাঠ, ইন্টারঅ্যাকটিভ প্রশ্ন, XP আর ব্যাজ। লগইন লাগে না, পুরোপুরি ফ্রি।', nav } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const fullTitle = title ? `${title} | Rust বাংলা` : 'Rust বাংলা: খেলতে খেলতে Rust শেখো';
 const canonical = new URL(Astro.url.pathname, Astro.site);
@@ -20,7 +20,7 @@ const og = new URL(base + 'og.png', Astro.site);
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={base + 'favicon.png'} />
     <link rel="apple-touch-icon" href={base + 'apple-touch-icon.png'} />
-    <meta name="theme-color" content="#fdf7f1" />
+    <meta name="theme-color" content="#ffffff" />
     <script is:inline>
       try { if (localStorage.getItem('rb-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
     </script>
@@ -37,19 +37,16 @@ const og = new URL(base + 'og.png', Astro.site);
   <body>
     <header class="topbar">
       <div class="wrap">
-        <a class="brand" href={base}><img src={base + 'logo-mark-256.png'} alt="Rust বাংলা লোগো" width="38" height="38" /><span>Rust <b>বাংলা</b></span></a>
+        <a class="brand" href={base}><img src={base + 'logo-mark-256.png'} alt="Rust বাংলা" width="34" height="34" /><span>Rust বাংলা</span></a>
         <nav class="nav">
-          <a href={base} aria-current={nav === 'home' ? 'page' : undefined}>🗺️ রোডম্যাপ</a>
-          <a href={base + 'docs/'} aria-current={nav === 'docs' ? 'page' : undefined}>📚 ডকস</a>
-          <a href={base + 'exam/'} aria-current={nav === 'exam' ? 'page' : undefined}>🎓 পরীক্ষা</a>
-          <a href={base + 'profile/'} aria-current={nav === 'profile' ? 'page' : undefined}>🏅 প্রোফাইল</a>
+          <a href={base} aria-current={nav === 'courses' ? 'page' : undefined}><Fragment set:html={icon('grid', 17)} />কোর্স</a>
+          <a href={base + 'docs/'} aria-current={nav === 'docs' ? 'page' : undefined}><Fragment set:html={icon('docs', 17)} />ডকস</a>
+          <a href={base + 'profile/'} aria-current={nav === 'profile' ? 'page' : undefined}><Fragment set:html={icon('user', 17)} />প্রোফাইল</a>
         </nav>
-        <div class="pills">
-          <a class="pill fire" href={base + 'profile/'} title="টানা কত দিন শিখছো">🔥 <span data-stat="streak">০</span></a>
-          <a class="pill xp" href={base + 'profile/'} title="মোট XP">⚡ <span data-stat="xp">০</span></a>
-          <button class="icon-btn" data-theme-toggle title="লাইট/ডার্ক মোড" aria-label="লাইট/ডার্ক মোড">🌙</button>
-          <button class="icon-btn" data-sound title="শব্দ চালু/বন্ধ" aria-label="শব্দ চালু/বন্ধ">🔊</button>
-          <a class="pill yt-btn" href={site.youtube} target="_blank" rel="noopener" title="Rust Bangla YouTube">▶<span> YouTube</span></a>
+        <div class="right">
+          <a class="pill fire" href={base + 'profile/'} title="টানা কত দিন শিখছো"><Fragment set:html={icon('flame', 16)} /><span data-stat="streak">০</span></a>
+          <a class="pill xp" href={base + 'profile/'} title="মোট XP"><Fragment set:html={icon('bolt', 16)} /><span data-stat="xp">০</span></a>
+          <button class="iconbtn" data-theme-toggle title="লাইট/ডার্ক" aria-label="লাইট/ডার্ক মোড"></button>
         </div>
       </div>
     </header>
@@ -58,21 +55,15 @@ const og = new URL(base + 'og.png', Astro.site);
     </main>
     <footer class="foot">
       <div class="wrap">
-        <img src={base + 'logo-mark-256.png'} alt="" width="44" height="44" />
-        <div>
-          <b>Rust বাংলা</b>: বাংলায় সবার জন্য ফ্রি Rust কোর্স। তোমার অগ্রগতি শুধু এই ব্রাউজারে সেভ থাকে।<br />
-          <a href={site.youtube} target="_blank" rel="noopener">YouTube</a> ·
-          <a href={site.playlist} target="_blank" rel="noopener">ভিডিও প্লেলিস্ট</a> ·
-          <a href={site.facebook} target="_blank" rel="noopener">Facebook</a> ·
-          <a href={base + 'docs/'}>ডকস</a>
-        </div>
+        <img src={base + 'logo-mark-256.png'} alt="" width="32" height="32" />
+        <span>Rust বাংলা: বাংলায় সবার জন্য ফ্রি প্রোগ্রামিং কোর্স। অগ্রগতি শুধু এই ব্রাউজারে সেভ থাকে।</span>
+        <a href={site.youtube} target="_blank" rel="noopener">YouTube</a>
       </div>
     </footer>
-    <nav class="bottomnav" aria-label="মোবাইল মেনু">
-      <a href={base}><b>🗺️</b>রোডম্যাপ</a>
-      <a href={base + 'docs/'}><b>📚</b>ডকস</a>
-      <a href={base + 'exam/'}><b>🎓</b>পরীক্ষা</a>
-      <a href={base + 'profile/'}><b>🏅</b>প্রোফাইল</a>
+    <nav class="bottomnav" aria-label="মেনু">
+      <a href={base} aria-current={nav === 'courses' ? 'page' : undefined}><Fragment set:html={icon('grid', 20)} />কোর্স</a>
+      <a href={base + 'docs/'}><Fragment set:html={icon('docs', 20)} />ডকস</a>
+      <a href={base + 'profile/'} aria-current={nav === 'profile' ? 'page' : undefined}><Fragment set:html={icon('user', 20)} />প্রোফাইল</a>
     </nav>
     <div id="toasts"></div>
     <script>

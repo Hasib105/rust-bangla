@@ -1,19 +1,27 @@
 import { getCollection } from 'astro:content';
 import { codeToHtml } from 'shiki';
-import { parts } from './parts';
+import { courseById } from './courses';
 
-export const slugOf = (id: string) => id.replace(/^\d+-/, '');
+export const slugOf = (id: string) => id.split('/')[1].replace(/^\d+-/, '');
+export const bnN = (n: number | string) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+export const baseUrl = () => import.meta.env.BASE_URL.replace(/\/?$/, '/');
+export const lessonUrl = (course: string, slug: string) => `${baseUrl()}${course}/${slug}/`;
 
-export async function getLessons() {
-  const all = await getCollection('lessons');
+export async function getLessons(course: string) {
+  const all = await getCollection('lessons', (l) => l.id.startsWith(course + '/'));
   return all
     .sort((a, b) => a.data.order - b.data.order)
-    .map((l) => ({ id: l.id, slug: slugOf(l.id), ...l.data, entry: l }));
+    .map((l) => ({ id: l.id, course, slug: slugOf(l.id), key: `${course}/${slugOf(l.id)}`, ...l.data, entry: l }));
 }
 
-export async function getCourse() {
-  const lessons = await getLessons();
-  return parts.map((p) => ({ ...p, lessons: lessons.filter((l) => l.part === p.id) })).filter((p) => p.lessons.length);
+export async function getCourseTree(course: string) {
+  const c = courseById(course);
+  const lessons = await getLessons(course);
+  return {
+    ...c,
+    lessons,
+    parts: c.parts.map((p) => ({ ...p, lessons: lessons.filter((l) => l.part === p.id) })).filter((p) => p.lessons.length),
+  };
 }
 
 const cache = new Map<string, string>();

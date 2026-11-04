@@ -1,0 +1,105 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এ memory পরিষ্কার করার জন্য পেছনে একটা garbage collector চলে।",
+      "answer": false,
+      "explain": "Rust-এ GC নেই। compiler আগেই হিসাব করে বলে দেয় কখন memory ফেরত যাবে, তাই runtime-এ বাড়তি খরচ হয় না।"
+    },
+    {
+      "type": "choice",
+      "q": "নতুন Rust project বানাতে কোন command লাগে?",
+      "options": [
+        "`cargo new hello`",
+        "`rustup new hello`",
+        "`rustc new hello`",
+        "`cargo make hello`"
+      ],
+      "answer": 0,
+      "explain": "`cargo new` ফোল্ডার, `Cargo.toml` আর `src/main.rs` বানিয়ে দেয়। বাকিগুলো আসল command নয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন command শুধু ভুল আছে কিনা দেখে, কিন্তু binary বানায় না (তাই দ্রুত)?",
+      "options": [
+        "`cargo run`",
+        "`cargo check`",
+        "`cargo clean`",
+        "`cargo build --release`"
+      ],
+      "answer": 1,
+      "explain": "`cargo check` পুরো machine code বানায় না, তাই অনেক দ্রুত শেষ হয়। লেখার সময় বারবার ভুল ধরতে এটা কাজের।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    println!(\"Hello, {}!\", \"Rust\");\n}",
+      "options": [
+        "Hello, Rust!",
+        "Hello, {}!",
+        "Hello, !",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`{}` জায়গায় পরের argument \"Rust\" বসে যায়। এটা দ্বিতীয় পাঠে বিস্তারিত দেখবে।"
+    },
+    {
+      "type": "fill",
+      "q": "release mode-এ binary বানানোর command-টা পূরণ করো।",
+      "code": "cargo ___ --release",
+      "answer": [
+        "build"
+      ],
+      "explain": "`cargo build --release` পুরো optimization সহ binary বানায়, আর সেটা থাকে `target/release/`-এ।"
+    },
+    {
+      "type": "order",
+      "q": "প্রথম project চালানোর ধাপগুলো ক্রমানুযায়ী সাজাও।",
+      "lines": [
+        "`cargo new hello` দিয়ে project বানাও",
+        "`cd hello` দিয়ে ফোল্ডারের ভেতরে ঢোকো",
+        "`src/main.rs`-এ কোড লেখো",
+        "`cargo run` দিয়ে compile করে চালাও"
+      ],
+      "explain": "আগে project তৈরি, তারপর তার ভেতরে ঢোকা, কোড লেখা আর শেষে চালানো। `cargo run` ফোল্ডারের বাইরে চালালে `Cargo.toml` খুঁজে পায় না।"
+    },
+    {
+      "type": "choice",
+      "q": "`cargo build --release` চালালে তৈরি হওয়া binary কোথায় থাকে?",
+      "options": [
+        "`src/release/`",
+        "`target/release/`",
+        "`Cargo.toml`-এর ভেতরে",
+        "`release/bin/`"
+      ],
+      "answer": 1,
+      "explain": "cargo সব বানানো ফাইল `target/` ফোল্ডারে রাখে। release build যায় `target/release/`-এ আর সাধারণ debug build `target/debug/`-এ।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`Cargo.toml` ফাইলে project-এর নাম, version আর edition লেখা থাকে।",
+      "answer": true,
+      "explain": "`Cargo.toml` হলো project-এর পরিচয়পত্র। পরে বাইরের library-র তালিকাও এখানেই যোগ হবে।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let n: i32 = \"five\";\n    println!(\"{n}\");\n}",
+      "answer": 2,
+      "explain": "লাইন ২-এ `i32` type বলা হয়েছে, কিন্তু মান দেওয়া হয়েছে লেখা। compiler E0308: mismatched types দেয়। এই কড়াকড়িই Rust-কে নিরাপদ করে।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "fn main() {\n    let name = \"Cargo\";\n    println!(\"{name} says: {}\", name.len());\n}",
+      "options": [
+        "Cargo says: 5",
+        "Cargo says: 6",
+        "{name} says: 5",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`{name}` সরাসরি variable-এর মান বসায়, আর `{}` পরের argument `name.len()` নেয়। \"Cargo\"-তে ৫টা অক্ষর।"
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { liveCourses, courseById } from '../../data/courses';
+import { getLessons, getCards, bnN, baseUrl } from '../../data/course';
+import { icon } from '../../scripts/icons';
+
+export async function getStaticPaths() {
+  const out = [];
+  for (const c of liveCourses) {
+    const lessons = await getLessons(c.id);
+    out.push(...lessons.map((l, i) => ({ params: { course: c.id, slug: l.slug }, props: { i } })));
+  }
+  return out;
+}
+const { i } = Astro.props;
+const course = courseById(Astro.params.course!);
+const lessons = await getLessons(course.id);
+const lesson = lessons[i];
+const prev = lessons[i - 1];
+const next = lessons[i + 1];
+const part = course.parts.find((p) => p.id === lesson.part)!;
+const { Content } = await render(lesson.entry);
+const cards = await getCards(lesson.id);
+const base = baseUrl();
+const url = (slug: string) => `${base}${course.id}/${slug}/`;
+const partLessons = lessons.filter((l) => l.part === lesson.part);
+const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
+---
+<Base title={lesson.title} description={lesson.summary} nav="courses">
+  <article class="narrow">
+    <header class="lhead">
+      <div class="crumbs">
+        <a href={`${base}${course.id}/`}>{course.title}</a><span>/</span><span>পর্ব {bnN(part.id)}: {part.title}</span><span>/</span><span>পাঠ {bnN(lesson.order)}</span>
+      </div>
+      <h1>{lesson.title}</h1>
+      <p class="sum">{lesson.summary}</p>
+      <div class="metas">
+        <span set:html={icon('clock', 16) + ` ${bnN(lesson.minutes)} মিনিট`} />
+        <span set:html={icon('target', 16) + ` ${bnN(cards.length)}টা প্রশ্ন`} />
+        <span set:html={icon('bolt', 16) + ` ${bnN(cards.length * 10 + 20)} XP`} />
+        <span id="done-chip" hidden set:html={icon('check', 16) + ' শেষ করেছো'} />
+      </div>
+    </header>
+
+    <div class="starts">
+      <button class="btn" data-start="play"><Fragment set:html={icon('play', 18)} /> পাঠ শুরু করো</button>
+      <button class="btn alt" data-start="quiz"><Fragment set:html={icon('target', 18)} /> শুধু প্রশ্ন</button>
+    </div>
+    <p class="muted" style="font-size:15px;margin:0">পাঠ: ছোট কার্ড আর মাঝে মাঝে প্রশ্ন। শুধু প্রশ্ন: জানা থাকলে সরাসরি অনুশীলন। নিচে পুরো লেখাও পড়তে পারো।</p>
+
+    <div class="read-h">পুরো লেখা</div>
+    <div class="prose" id="read">
+      <Content />
+    </div>
+
+    <section class="endcta">
+      <h2>এবার নিজে করে দেখো</h2>
+      <p>{bnN(cards.length)}টা প্রশ্ন। প্রথমবারেই ঠিক হলে প্রতিটায় ১০ XP। ভুলগুলো শেষে আবার আসবে।</p>
+      <div class="row">
+        <button class="btn" data-start="quiz">প্রশ্ন শুরু করো</button>
+        <button class="btn alt" data-start="play">কার্ড দিয়ে পাঠ</button>
+      </div>
+    </section>
+
+    <nav class="pager">
+      {prev && <a class="pv" href={url(prev.slug)}><small>আগের পাঠ</small>{prev.short}</a>}
+      {next && <a class="nx" href={url(next.slug)}><small>পরের পাঠ</small>{next.short}</a>}
+    </nav>
+  </article>
+
+  <div class="layer" id="layer" hidden></div>
+
+  <script
+    is:inline
+    type="application/json"
+    id="quiz-data"
+    set:html={JSON.stringify({
+      key: lesson.key,
+      cards,
+      next: next ? { href: url(next.slug), title: next.short } : null,
+      boss: lastOfPart ? { href: `${base}${course.id}/challenge/${lesson.part}/`, title: `পর্ব ${bnN(lesson.part)}-এর চ্যালেঞ্জ` } : null,
+      home: `${base}${course.id}/`,
+    }).replace(/</g, '\\u003c')}
+  />
+</Base>
+
+<script>
+  import { runQuiz, starsFor } from '../../scripts/quiz';
+  import { load, save, gain, bn } from '../../scripts/store';
+  import { confetti, sound, announceBadges, toast } from '../../scripts/ui';
+  import { initRunners } from '../../scripts/runner';
+  import { resultHtml } from '../../scripts/finish';
+
+  // Snapshot lesson sections (before Run buttons are added) for the card player.
+  const sections: { title: string; html: string }[] = [];
+  {
+    let cur: { title: string; nodes: Element[] } | null = null;
+    const flush = () => { if (cur && cur.nodes.length) sections.push({ title: cur.title, html: cur.nodes.map((n) => n.outerHTML).join('') }); };
+    for (const el of [...document.getElementById('read')!.children]) {
+      if (el.tagName === 'H2') { flush(); cur = { title: el.textContent || '', nodes: [] }; }
+      else if (cur) cur.nodes.push(el);
+    }
+    flush();
+  }
+  initRunners();
+
+  const data = JSON.parse(document.getElementById('quiz-data')!.textContent!);
+  const layer = document.getElementById('layer')!;
+  if (load().lessons[data.key]) document.getElementById('done-chip')!.hidden = false;
+
+  function close() { layer.hidden = true; document.body.style.overflow = ''; }
+
+  /** Learn cards from the lesson sections, questions spread between them, hardest last. */
+  function playDeck() {
+    const learn = sections.filter((x) => !/নিজে করো/.test(x.title)).map((x) => ({ type: 'learn', explain: '', q: '', ...x }));
+    const qs = [...data.cards];
+    const boss = qs.pop();
+    const deck: any[] = [];
+    learn.forEach((l, k) => {
+      deck.push(l);
+      const n = data.cards.length - 1;
+      deck.push(...qs.splice(0, Math.round(((k + 1) * n) / learn.length) - Math.round((k * n) / learn.length)));
+    });
+    deck.push(...qs);
+    if (boss) deck.push(boss);
+    return deck;
+  }
+
+  let lastMode = 'play';
+  function start(mode = lastMode) {
+    lastMode = mode;
+    layer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    runQuiz(layer, mode === 'play' ? playDeck() : data.cards, {
+      requeue: true,
+      onLearn: (el) => initRunners(el),
+      onClose: () => { if (confirm('ছেড়ে যাবে? এই রাউন্ডের অগ্রগতি সেভ হবে না।')) close(); },
+      onFinish: ({ firstTry, total, missed }) => {
+        const s = load();
+        const old = s.lessons[data.key];
+        const stars = starsFor(firstTry, total);
+        const firstTime = !old;
+        const xp = Math.max(0, firstTry - (old?.best ?? 0)) * 10 + (firstTime ? 20 : 0) + (stars === 3 && (old?.stars ?? 0) < 3 ? 10 : 0);
+        s.lessons[data.key] = { best: Math.max(firstTry, old?.best ?? 0), total, stars: Math.max(stars, old?.stars ?? 0), at: new Date().toISOString() };
+        const nb = gain(s, xp);
+        save(s);
+        sound('win');
+        confetti(stars === 3 ? 120 : 60);
+        announceBadges(nb);
+        layer.innerHTML = resultHtml({
+          score: firstTry, total, stars,
+          title: ['ভালো চেষ্টা', 'দারুণ', 'নিখুঁত'][stars - 1] + '!',
+          sub: xp === 0 && !firstTime ? 'আগের সেরা স্কোর ছাড়ালে নতুন XP পাবে।' : '',
+          stats: [[`+${bn(xp)}`, 'XP'], [bn(s.streak.count), 'দিন টানা'], [bn(Object.keys(s.lessons).length), 'পাঠ শেষ']],
+          missed,
+          actions: `${data.boss ? `<a class="btn" href="${data.boss.href}">${data.boss.title}</a>` : ''}
+            ${data.next ? `<a class="btn ${data.boss ? 'alt' : ''}" href="${data.next.href}">পরের পাঠ: ${data.next.title}</a>` : ''}
+            <button class="btn alt" id="again">আবার খেলো</button>
+            <a class="btn alt" href="${data.home}">কোর্সে ফিরে যাও</a>`,
+        });
+        layer.scrollTop = 0;
+        document.getElementById('again')!.onclick = () => start();
+        document.getElementById('done-chip')!.hidden = false;
+        if (xp > 0) toast(`+${bn(xp)} XP`, 'চালিয়ে যাও', 'bolt');
+      },
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-start]').forEach((b) => b.addEventListener('click', () => start(b.dataset.start)));
+  if (location.hash === '#play') start('play');
+  if (location.hash === '#quiz') start('quiz');
+</script>

@@ -1,53 +1,52 @@
 ---
 import Base from '../layouts/Base.astro';
 import { badges, ranks } from '../scripts/store';
-const bnN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+import { icon } from '../scripts/icons';
+import { bnN } from '../data/course';
 ---
-<Base title="প্রোফাইল" nav="profile" description="তোমার XP, র‍্যাঙ্ক, স্ট্রিক আর ব্যাজ।">
+<Base title="প্রোফাইল" nav="profile" description="তোমার XP, লেভেল, স্ট্রিক আর ব্যাজ।">
   <div class="wrap" style="padding-bottom:30px">
-    <h1 class="page-title">🏅 তোমার প্রোফাইল</h1>
-    <p class="muted">লগইন নেই, তাই সব অগ্রগতি এই ব্রাউজারেই সেভ থাকে। অন্য ডিভাইসে নিতে নিচের ব্যাকআপ ব্যবহার করো।</p>
+    <h1 class="page-title">প্রোফাইল</h1>
+    <p class="muted">লগইন নেই, তাই সব অগ্রগতি এই ব্রাউজারেই থাকে। অন্য ডিভাইসে নিতে নিচের ব্যাকআপ ব্যবহার করো।</p>
 
-    <div class="stats">
-      <div class="stat"><div class="k">র‍্যাঙ্ক</div><div class="v"><span data-stat="rankIcon">🥚</span> <span data-stat="rank">ডিম</span></div><div class="bar"><i data-rank-bar></i></div><small class="muted" data-rank-next></small></div>
-      <div class="stat"><div class="k">মোট XP</div><div class="v">⚡ <span data-stat="xp">০</span></div></div>
-      <div class="stat"><div class="k">স্ট্রিক (সর্বোচ্চ)</div><div class="v">🔥 <span data-stat="streak">০</span> <small class="muted">(<span id="maxs">০</span>)</small></div></div>
-      <div class="stat"><div class="k">শেষ করা পাঠ</div><div class="v">📘 <span data-stat="done">০</span>/৪০</div></div>
+    <div class="stats4" data-reveal>
+      <div class="stat"><div class="k"><Fragment set:html={icon('medal', 16)} />লেভেল <span data-stat="level">১</span></div><div class="v" data-stat="rank">নতুন</div><div class="bar"><i data-rank-bar></i></div><small class="muted" data-rank-next></small></div>
+      <div class="stat"><div class="k"><Fragment set:html={icon('bolt', 16)} />মোট XP</div><div class="v" data-stat="xp">০</div></div>
+      <div class="stat"><div class="k"><Fragment set:html={icon('flame', 16)} />দিন টানা (সর্বোচ্চ <span id="maxs">০</span>)</div><div class="v" data-stat="streak">০</div></div>
+      <div class="stat"><div class="k"><Fragment set:html={icon('target', 16)} />আজকের লক্ষ্য</div><div class="v"><span data-stat="daily">০</span>/৫০ XP</div><div class="bar"><i data-daily-bar></i></div></div>
     </div>
 
-    <h2>👑 র‍্যাঙ্কের সিঁড়ি</h2>
+    <h2>লেভেল</h2>
     <div class="ladder" id="ladder">
-      {ranks.map((r, i) => <span data-i={i}>{r.icon} {r.name} <small class="muted">{bnN(r.xp)} XP</small></span>)}
+      {ranks.map((r, i) => <span data-i={i}>{bnN(i + 1)}. {r.name} <small class="muted">· {bnN(r.xp)} XP</small></span>)}
     </div>
 
-    <h2 style="margin-top:30px">🎖️ ব্যাজ <small class="muted" id="bcount"></small></h2>
-    <div class="badge-grid">
+    <h2 style="margin-top:30px">ব্যাজ <small class="muted" id="bcount"></small></h2>
+    <div class="badge-grid" data-reveal>
       {badges.map((b) => (
         <div class="badge locked" data-badge={b.id}>
-          <div class="bi">{b.icon}</div>
+          <div class="bi" set:html={icon(b.icon, 26)} />
           <b>{b.name}</b>
           <small>{b.desc}</small>
         </div>
       ))}
     </div>
 
-    <h2 style="margin-top:30px">📅 গত ২৮ দিন</h2>
+    <h2 style="margin-top:30px">গত ২৮ দিন</h2>
     <div id="heat" style="display:grid;grid-template-columns:repeat(14,1fr);gap:6px;max-width:520px"></div>
 
-    <h2 style="margin-top:30px">💾 ব্যাকআপ</h2>
-    <div class="panel">
-      <p style="margin-top:0">অগ্রগতি কপি করে অন্য ফোন বা কম্পিউটারে পেস্ট করো।</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn small" id="exp">📋 অগ্রগতি কপি করো</button>
-        <button class="btn small ghost" id="imp">📥 অগ্রগতি পেস্ট করো</button>
-        <button class="btn small red" id="rst">🗑️ সব মুছে ফেলো</button>
-      </div>
+    <h2 style="margin-top:30px">সেটিংস আর ব্যাকআপ</h2>
+    <div class="panel" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn sm alt" data-sound-toggle>শব্দ: <span id="snd"></span></button>
+      <button class="btn sm alt" id="exp"><Fragment set:html={icon('copy', 16)} /> অগ্রগতি কপি করো</button>
+      <button class="btn sm alt" id="imp">অগ্রগতি পেস্ট করো</button>
+      <button class="btn sm red" id="rst"><Fragment set:html={icon('trash', 16)} /> সব মুছে ফেলো</button>
     </div>
   </div>
 </Base>
 
 <script>
-  import { load, rankOf, importState, exportState, reset, today, bn } from '../scripts/store';
+  import { load, save, rankOf, importState, exportState, reset, today, bn } from '../scripts/store';
   import { toast } from '../scripts/ui';
 
   function paint() {
@@ -59,8 +58,9 @@ const bnN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫�
       el.classList.toggle('locked', !got);
       el.classList.toggle('got', got);
     });
-    document.getElementById('bcount')!.textContent = `(${bn(s.badges.length)} পেয়েছো)`;
+    document.getElementById('bcount')!.textContent = `${bn(s.badges.length)} পেয়েছো`;
     document.getElementById('maxs')!.textContent = bn(s.streak.max);
+    document.getElementById('snd')!.textContent = s.sound ? 'চালু' : 'বন্ধ';
     const heat = document.getElementById('heat')!;
     heat.innerHTML = '';
     for (let i = 27; i >= 0; i--) {
@@ -69,25 +69,26 @@ const bnN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫�
       const xp = s.daily[today(d)] ?? 0;
       const c = document.createElement('div');
       c.title = `${d.toLocaleDateString('bn-BD')}: ${bn(xp)} XP`;
-      c.style.cssText = `aspect-ratio:1;border-radius:6px;border:1px solid var(--line);background:${xp === 0 ? 'var(--card)' : xp < 30 ? '#6b3a17' : xp < 60 ? '#b5561c' : '#ff7a2f'}`;
+      c.style.cssText = `aspect-ratio:1;border-radius:6px;border:1px solid var(--line);background:${xp === 0 ? 'var(--soft)' : `color-mix(in srgb, var(--accent) ${Math.min(100, 25 + xp)}%, var(--soft))`}`;
       heat.append(c);
     }
   }
   paint();
   window.addEventListener('rb:state', paint);
 
+  document.querySelector<HTMLButtonElement>('[data-sound-toggle]')!.onclick = () => { const s = load(); s.sound = !s.sound; save(s); };
   document.getElementById('exp')!.onclick = async () => {
     const code = btoa(unescape(encodeURIComponent(exportState())));
-    try { await navigator.clipboard.writeText(code); toast('📋 কপি হয়েছে', 'অন্য ডিভাইসে "পেস্ট করো" চাপো'); }
+    try { await navigator.clipboard.writeText(code); toast('কপি হয়েছে', 'অন্য ডিভাইসে "পেস্ট করো" চাপো', 'copy'); }
     catch { prompt('এই কোডটা কপি করো:', code); }
   };
   document.getElementById('imp')!.onclick = () => {
     const code = prompt('ব্যাকআপ কোড পেস্ট করো:');
     if (!code) return;
-    try { importState(decodeURIComponent(escape(atob(code.trim())))); toast('✅ অগ্রগতি ফিরে এসেছে'); paint(); }
-    catch { toast('❌ কোডটা ঠিক নেই'); }
+    try { importState(decodeURIComponent(escape(atob(code.trim())))); toast('অগ্রগতি ফিরে এসেছে'); paint(); }
+    catch { toast('কোডটা ঠিক নেই', '', 'x'); }
   };
   document.getElementById('rst')!.onclick = () => {
-    if (confirm('সত্যিই সব XP, ব্যাজ আর অগ্রগতি মুছে ফেলবে?')) { reset(); paint(); toast('🗑️ সব মুছে ফেলা হয়েছে'); }
+    if (confirm('সত্যিই সব XP, ব্যাজ আর অগ্রগতি মুছে ফেলবে?')) { reset(); paint(); toast('সব মুছে ফেলা হয়েছে', '', 'trash'); }
   };
 </script>

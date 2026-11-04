@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এ `null` আছে, তবে খুব কম ব্যবহার করা হয়।",
+      "answer": false,
+      "explain": "Rust-এ null নেই। value না থাকার সম্ভাবনা `Option<T>` দিয়ে type-এ লেখা হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let x: Option<i32> = Some(4);\n    println!(\"{:?}\", x.map(|n| n + 1));\n}",
+      "options": [
+        "Some(5)",
+        "5",
+        "Some(4)",
+        "None"
+      ],
+      "answer": 0,
+      "explain": "`map` `Some`-এর ভেতরে `4 + 1` চালায়, আর ফল আবার `Some`-এ মোড়ানো থাকে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let v = [1, 2, 3];\n    println!(\"{}\", v.get(5).unwrap_or(&0));\n}",
+      "options": [
+        "0",
+        "None",
+        "3",
+        "panic"
+      ],
+      "answer": 0,
+      "explain": "index ৫ বাইরে, তাই `get` `None` দেয়। `unwrap_or(&0)` তখন default `0` ফেরত দেয়। panic হয় না।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let x: Option<i32> = Some(1);\n    let y = x + 1;\n    println!(\"{y}\");\n}",
+      "answer": 3,
+      "explain": "`Option<i32>` আর সংখ্যা যোগ করা যায় না। আগে value বের করতে হয়, যেমন `x.unwrap_or(0) + 1`। error: E0369।"
+    },
+    {
+      "type": "fill",
+      "q": "value না মিললে `return` করতে ফাঁকা জায়গায় কী বসবে?",
+      "code": "fn show(v: Option<i32>) {\n    let Some(n) = v ___ {\n        return;\n    };\n    println!(\"{n}\");\n}",
+      "answer": [
+        "else"
+      ],
+      "explain": "`let Some(n) = v else { ... };` হলো `let else`। না মিললে `else` ব্লকে বেরিয়ে যেতে হয়।"
+    },
+    {
+      "type": "order",
+      "q": "`?` ব্যবহার করে প্রথম অক্ষর বড় হাতের করার function সাজাও।",
+      "lines": [
+        "fn first_upper(s: &str) -> Option<char> {",
+        "let c = s.chars().next()?;",
+        "Some(c.to_ascii_uppercase())",
+        "}"
+      ],
+      "explain": "signature আগে। `next()?` খালি text হলে এখানেই `None` ফেরত দেয়। সবশেষে `Some(..)`-তে মুড়ে ফল ফেরত।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn half(n: i32) -> Option<i32> {\n    if n % 2 == 0 { Some(n / 2) } else { None }\n}\n\nfn main() {\n    let r = Some(12).and_then(half).and_then(half).and_then(half);\n    println!(\"{:?}\", r);\n}",
+      "options": [
+        "None",
+        "Some(3)",
+        "Some(6)",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`12 -> 6 -> 3`, তারপর `half(3)` `None` দেয় কারণ ৩ বিজোড়। একবার `None` এলে সেটাই শেষ ফল।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`Option` এর উপর `.unwrap()` ডাকলে `None` পেলে program panic করে।",
+      "answer": true,
+      "explain": "হ্যাঁ। তাই `unwrap_or`, `match` বা `if let` ব্যবহার করাই ভালো।"
+    },
+    {
+      "type": "choice",
+      "q": "`Option` ফেরত দেওয়া function-এর ভেতরে `?` কোনো `None` পেলে কী করে?",
+      "options": [
+        "function থেকে সঙ্গে সঙ্গে `None` ফেরত দেয়",
+        "`0` ধরে এগিয়ে যায়",
+        "panic করে",
+        "আবার চেষ্টা করে"
+      ],
+      "answer": 0,
+      "explain": "`?` `Some` হলে value খুলে দেয়, আর `None` হলে function সেখানেই `None` ফেরত দিয়ে শেষ হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "fn half(n: i32) -> Option<i32> {\n    if n % 2 == 0 { Some(n / 2) } else { None }\n}\n\nfn quarter(n: i32) -> Option<i32> {\n    let h = half(n)?;\n    half(h)\n}\n\nfn main() {\n    println!(\"{:?} {:?}\", quarter(20), quarter(6));\n}",
+      "options": [
+        "Some(5) None",
+        "Some(5) Some(3)",
+        "None None",
+        "Some(10) None"
+      ],
+      "answer": 0,
+      "explain": "`quarter(20)`: `20 -> 10 -> 5`। `quarter(6)`: `6 -> 3`, তারপর `half(3)` `None` বলে `?` সঙ্গে সঙ্গে `None` ফেরত দেয়।"
+    }
+  ]
+}

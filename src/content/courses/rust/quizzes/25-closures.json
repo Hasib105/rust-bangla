@@ -1,0 +1,115 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "closure চারপাশের local variable ব্যবহার করতে পারে, কিন্তু সাধারণ function পারে না।",
+      "answer": true,
+      "explain": "closure তার environment থেকে variable ধার নিতে বা মালিকানা নিতে পারে। সাধারণ function শুধু নিজের parameter আর নিজের variable দেখে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let double = |x| x * 2;\n    println!(\"{}\", double(7));\n}",
+      "options": [
+        "14",
+        "7",
+        "9",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "closure x নিয়ে x * 2 ফেরত দেয়। compiler নিজেই বুঝে নেয় x একটা integer, তাই type লিখতে হয়নি।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut total = 0;\n    let mut add = |n: i32| total += n;\n    add(3);\n    add(4);\n    println!(\"{total}\");\n}",
+      "options": [
+        "7",
+        "0",
+        "4",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "closure total-কে &mut হিসেবে ধার নেয় এবং প্রতিবার যোগ করে। শেষ ব্যবহারের পর ধার ফুরিয়ে যায়, তাই total print করা যায়: 3 + 4 = 7।"
+    },
+    {
+      "type": "fill",
+      "q": "closure যেন `name`-এর মালিক হয়ে যায়, সেজন্য কোন keyword বসবে?",
+      "code": "let name = String::from(\"Rina\");\nlet f = ___ || println!(\"{name}\");\nf();",
+      "answer": [
+        "move"
+      ],
+      "explain": "move লিখলে closure ধার না নিয়ে captured variable-এর মালিক হয়। closure যখন বানানোর scope-এর বাইরে যাবে, তখন এটা জরুরি।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let s = String::from(\"hi\");\n    let f = move || println!(\"{s}\");\n    f();\n    println!(\"{s}\");\n}",
+      "answer": 5,
+      "explain": "লাইন ৩-এর move closure s-এর মালিক হয়ে গেছে। তাই লাইন ৫-এ s ব্যবহার করতে গেলে E0382: borrow of moved value আসে।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন trait-এর closure শুধুমাত্র **একবার** ডাকা যায়?",
+      "options": [
+        "`Fn`",
+        "`FnMut`",
+        "`FnOnce`",
+        "তিনটাই একবার"
+      ],
+      "answer": 2,
+      "explain": "FnOnce closure captured value খরচ করে ফেলে (যেমন return করে দেয়), তাই দ্বিতীয়বার ডাকার মতো কিছু থাকে না।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn make_adder(n: i32) -> impl Fn(i32) -> i32 {\n    move |x| x + n\n}\n\nfn main() {\n    let add3 = make_adder(3);\n    let add10 = make_adder(10);\n    println!(\"{} {}\", add3(1), add10(1));\n}",
+      "options": [
+        "4 11",
+        "4 4",
+        "11 4",
+        "3 10"
+      ],
+      "answer": 0,
+      "explain": "প্রতিটা closure নিজের n কপি করে রেখেছে। add3-এর n = 3, তাই 1 + 3 = 4। add10-এর n = 10, তাই 1 + 10 = 11।"
+    },
+    {
+      "type": "order",
+      "q": "একটা counter বানানোর কোড সঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`let mut n = 0;`",
+        "`let mut inc = move || {`",
+        "`    n += 1;`",
+        "`    n`",
+        "`};`",
+        "`println!(\"{}\", inc());`"
+      ],
+      "explain": "আগে variable, তারপর সেটা move করে নেওয়া closure। closure-এর ভেতরে বদলে মান return করা হয়, শেষে closure ডাকা হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "`words.sort_by_key(|w| w.len());` লিখলে `[\"ccc\", \"a\", \"bb\"]` কীভাবে সাজবে?",
+      "options": [
+        "`[\"a\", \"bb\", \"ccc\"]`",
+        "`[\"ccc\", \"bb\", \"a\"]`",
+        "`[\"a\", \"ccc\", \"bb\"]`",
+        "যেমন ছিল তেমনই থাকবে"
+      ],
+      "answer": 0,
+      "explain": "প্রতিটা শব্দের key হলো তার দৈর্ঘ্য: 3, 1, 2। ছোট key আগে আসে, তাই a (1), bb (2), ccc (3)।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "fn apply(f: impl Fn(i32) -> i32, times: u32, start: i32) -> i32 {\n    let mut v = start;\n    for _ in 0..times {\n        v = f(v);\n    }\n    v\n}\n\nfn main() {\n    let step = 3;\n    let r = apply(|x| x * 2 + step, 3, 1);\n    println!(\"{r}\");\n}",
+      "options": [
+        "29",
+        "13",
+        "21",
+        "19"
+      ],
+      "answer": 0,
+      "explain": "closure step = 3 ধরে রেখেছে। 1 থেকে শুরু করে তিনবার: 1*2+3 = 5, 5*2+3 = 13, 13*2+3 = 29।"
+    }
+  ]
+}

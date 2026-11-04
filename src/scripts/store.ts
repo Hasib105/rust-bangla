@@ -1,12 +1,12 @@
 // Progress lives only in this browser (localStorage). No login, no server.
-const KEY = 'rust-bangla:v1';
+const KEY = 'rust-bangla:v2';
 
 export interface LessonResult { best: number; total: number; stars: number; at: string }
 export interface State {
   xp: number;
-  lessons: Record<string, LessonResult>; // by lesson slug
-  bosses: Record<string, number>; // part id -> best score (of 10)
-  exam?: { score: number; total: number; name?: string; at: string };
+  lessons: Record<string, LessonResult>; // key: "<course>/<slug>"
+  bosses: Record<string, number>; // key: "<course>:<part>" -> best score (of 10)
+  exams: Record<string, { score: number; total: number; name?: string; at: string }>; // by course
   streak: { last: string; count: number; max: number };
   daily: Record<string, number>; // YYYY-MM-DD -> xp earned that day
   badges: string[];
@@ -15,7 +15,7 @@ export interface State {
 }
 
 const fresh = (): State => ({
-  xp: 0, lessons: {}, bosses: {}, streak: { last: '', count: 0, max: 0 }, daily: {}, badges: [], runs: 0, sound: true,
+  xp: 0, lessons: {}, bosses: {}, exams: {}, streak: { last: '', count: 0, max: 0 }, daily: {}, badges: [], runs: 0, sound: true,
 });
 
 export function load(): State {
@@ -48,34 +48,36 @@ export const DAILY_GOAL = 50;
 
 // ---------- ranks ----------
 export const ranks = [
-  { xp: 0, name: 'ডিম', icon: '🥚' },
-  { xp: 150, name: 'ছোট কাঁকড়া', icon: '🦀' },
-  { xp: 500, name: 'Borrow শিক্ষার্থী', icon: '📘' },
-  { xp: 1200, name: 'Trait কারিগর', icon: '🧩' },
-  { xp: 2200, name: 'Fearless কোডার', icon: '⚡' },
-  { xp: 3500, name: 'Rustacean', icon: '👑' },
+  { xp: 0, name: 'নতুন' },
+  { xp: 150, name: 'শিক্ষার্থী' },
+  { xp: 500, name: 'Borrow বুঝি' },
+  { xp: 1200, name: 'Trait কারিগর' },
+  { xp: 2200, name: 'Concurrency যোদ্ধা' },
+  { xp: 3500, name: 'Rustacean' },
 ];
 export function rankOf(xp: number) {
   let i = 0;
   ranks.forEach((r, k) => { if (xp >= r.xp) i = k; });
-  return { ...ranks[i], index: i, next: ranks[i + 1] };
+  return { ...ranks[i], index: i, level: i + 1, next: ranks[i + 1] };
 }
 
 // ---------- badges ----------
+const doneCount = (s: State) => Object.keys(s.lessons).length;
+const wonBosses = (s: State) => Object.values(s.bosses).filter((v) => v >= 7).length;
 export const badges: { id: string; icon: string; name: string; desc: string; test: (s: State) => boolean }[] = [
-  { id: 'first', icon: '🐣', name: 'প্রথম পা', desc: 'প্রথম পাঠ শেষ করো', test: (s) => Object.keys(s.lessons).length >= 1 },
-  { id: 'five', icon: '🖐️', name: 'পাঁচে পাঁচ', desc: '৫টা পাঠ শেষ করো', test: (s) => Object.keys(s.lessons).length >= 5 },
-  { id: 'twenty', icon: '🧗', name: 'অর্ধেক পথ', desc: '২০টা পাঠ শেষ করো', test: (s) => Object.keys(s.lessons).length >= 20 },
-  { id: 'all', icon: '🏁', name: 'পুরো কোর্স', desc: '৪০টা পাঠই শেষ করো', test: (s) => Object.keys(s.lessons).length >= 40 },
-  { id: 'borrow', icon: '🧠', name: 'Borrow Checker-এর বন্ধু', desc: 'Ownership পর্বের বস হারাও', test: (s) => (s.bosses['2'] ?? 0) >= 7 },
-  { id: 'fearless', icon: '⚡', name: 'Fearless', desc: 'Concurrency পর্বের বস হারাও', test: (s) => (s.bosses['9'] ?? 0) >= 7 },
-  { id: 'boss3', icon: '🐉', name: 'বস শিকারি', desc: '৩টা বস হারাও', test: (s) => Object.values(s.bosses).filter((v) => v >= 7).length >= 3 },
-  { id: 'perfect', icon: '⭐', name: 'নিখুঁত', desc: 'কোনো পাঠে ৩ তারা পাও', test: (s) => Object.values(s.lessons).some((l) => l.stars === 3) },
-  { id: 'perfect10', icon: '🌟', name: 'তারকা', desc: '১০টা পাঠে ৩ তারা পাও', test: (s) => Object.values(s.lessons).filter((l) => l.stars === 3).length >= 10 },
-  { id: 'streak3', icon: '🔥', name: '৩ দিনের আগুন', desc: 'টানা ৩ দিন শেখো', test: (s) => s.streak.max >= 3 },
-  { id: 'streak7', icon: '☄️', name: 'সাপ্তাহিক যোদ্ধা', desc: 'টানা ৭ দিন শেখো', test: (s) => s.streak.max >= 7 },
-  { id: 'runner', icon: '▶️', name: 'কোড চালাও', desc: '১০ বার কোড Run করো', test: (s) => s.runs >= 10 },
-  { id: 'rustacean', icon: '👑', name: 'Rustacean', desc: 'ফাইনাল পরীক্ষায় পাশ করো', test: (s) => !!s.exam && s.exam.score / s.exam.total >= 0.7 },
+  { id: 'first', icon: 'rocket', name: 'প্রথম পা', desc: 'প্রথম পাঠ শেষ করো', test: (s) => doneCount(s) >= 1 },
+  { id: 'five', icon: 'book', name: 'পাঁচে পাঁচ', desc: '৫টা পাঠ শেষ করো', test: (s) => doneCount(s) >= 5 },
+  { id: 'twenty', icon: 'target', name: 'অর্ধেক পথ', desc: '২০টা পাঠ শেষ করো', test: (s) => doneCount(s) >= 20 },
+  { id: 'all', icon: 'trophy', name: 'পুরো কোর্স', desc: '৪০টা পাঠ শেষ করো', test: (s) => doneCount(s) >= 40 },
+  { id: 'borrow', icon: 'shield', name: 'Borrow Checker-এর বন্ধু', desc: 'Rust: Ownership চ্যালেঞ্জ জেতো', test: (s) => (s.bosses['rust:2'] ?? 0) >= 7 },
+  { id: 'fearless', icon: 'bolt', name: 'Fearless', desc: 'Rust: Concurrency চ্যালেঞ্জ জেতো', test: (s) => (s.bosses['rust:9'] ?? 0) >= 7 },
+  { id: 'boss3', icon: 'medal', name: 'চ্যালেঞ্জার', desc: '৩টা পর্ব-চ্যালেঞ্জ জেতো', test: (s) => wonBosses(s) >= 3 },
+  { id: 'perfect', icon: 'star', name: 'নিখুঁত', desc: 'কোনো পাঠে ৩ তারা পাও', test: (s) => Object.values(s.lessons).some((l) => l.stars === 3) },
+  { id: 'perfect10', icon: 'star', name: 'তারকা', desc: '১০টা পাঠে ৩ তারা পাও', test: (s) => Object.values(s.lessons).filter((l) => l.stars === 3).length >= 10 },
+  { id: 'streak3', icon: 'flame', name: '৩ দিন টানা', desc: 'টানা ৩ দিন শেখো', test: (s) => s.streak.max >= 3 },
+  { id: 'streak7', icon: 'flame', name: '৭ দিন টানা', desc: 'টানা ৭ দিন শেখো', test: (s) => s.streak.max >= 7 },
+  { id: 'runner', icon: 'code', name: 'কোড চালাও', desc: '১০ বার কোড Run করো', test: (s) => s.runs >= 10 },
+  { id: 'rustacean', icon: 'crown', name: 'Rustacean', desc: 'Rust ফাইনাল পরীক্ষায় পাশ করো', test: (s) => { const e = s.exams['rust']; return !!e && e.score / e.total >= 0.7; } },
 ];
 
 /** Adds XP (counts toward streak + daily goal) and returns newly earned badges. */

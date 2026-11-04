@@ -1,0 +1,110 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`{:?}` দিয়ে নিজের struct print করতে হলে `#[derive(Debug)]` (বা নিজে `impl Debug`) লাগে।",
+      "answer": true,
+      "explain": "Debug একটা trait, কোনো type নিজে থেকে পায় না। derive দিলে compiler impl লিখে দেয়।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "#[derive(Debug, Clone, PartialEq)]\nstruct Item {\n    id: u32,\n}\n\nfn main() {\n    let a = Item { id: 7 };\n    let b = a.clone();\n    println!(\"{}\", a == b);\n}",
+      "options": [
+        "Item { id: 7 }",
+        "true",
+        "false",
+        "compile error"
+      ],
+      "answer": 1,
+      "explain": "clone() একই মানের কপি বানায়, আর derive(PartialEq) field ধরে ধরে তুলনা করে। তাই == true দেয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "#[derive(Debug, Default)]\nstruct Config {\n    retries: u32,\n    verbose: bool,\n}\n\nfn main() {\n    let c = Config::default();\n    println!(\"{:?}\", c);\n}",
+      "options": [
+        "Config",
+        "compile error: no default value",
+        "Config { retries: 0, verbose: false }",
+        "Config { retries: 1, verbose: true }"
+      ],
+      "answer": 2,
+      "explain": "derive(Default) প্রতিটা field-এর নিজের ডিফল্ট ব্যবহার করে: u32-এর 0 আর bool-এর false।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "struct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let p = Point { x: 1, y: 2 };\n    println!(\"{:?}\", p);\n}",
+      "answer": 8,
+      "explain": "Point-এ Debug নেই, তাই {:?} লাইনে E0277 আসে। struct-এর ওপরে #[derive(Debug)] দিলে ঠিক হয়ে যায়।"
+    },
+    {
+      "type": "fill",
+      "q": "`Fahrenheit::from(c)` লেখা না লিখে `.into()` দিয়ে একই কাজ করতে ফাঁকা জায়গায় কী বসবে?",
+      "code": "let f: Fahrenheit = c.___();",
+      "answer": [
+        "into"
+      ],
+      "explain": "impl From<A> for B লিখলে A-এর ওপর .into() ফ্রি পাওয়া যায়। ফলাফলের type (Fahrenheit) let-এ লিখে দিতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::fmt;\n\nstruct Id(u32);\n\nimpl fmt::Display for Id {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        write!(f, \"#{}\", self.0)\n    }\n}\n\nfn main() {\n    let id = Id(42);\n    println!(\"{} {}\", id, id.to_string().len());\n}",
+      "options": [
+        "Id(42) 5",
+        "#42 3",
+        "42 2",
+        "#42 2"
+      ],
+      "answer": 1,
+      "explain": "Display-এর write! \"#42\" লেখে। to_string() ফ্রি পাওয়া যায়, আর \"#42\"-এর দৈর্ঘ্য 3।"
+    },
+    {
+      "type": "order",
+      "q": "নিজের type-এ `+` চালানোর code ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`use std::ops::Add;`",
+        "`struct P { x: i32 }`",
+        "`impl Add for P {`",
+        "`    type Output = P;`",
+        "`    fn add(self, o: P) -> P { P { x: self.x + o.x } }`",
+        "`}`"
+      ],
+      "explain": "আগে trait আনো, type বানাও, তারপর impl Add-এ Output type আর add method লেখো।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]\nstruct Card {\n    rank: u8,\n    suit: char,\n}\n\nfn main() {\n    let mut cards = vec![\n        Card { rank: 3, suit: 'b' },\n        Card { rank: 3, suit: 'a' },\n        Card { rank: 1, suit: 'z' },\n    ];\n    cards.sort();\n    println!(\"{} {}\", cards[0].suit, cards[1].suit);\n}",
+      "options": [
+        "a b",
+        "z b",
+        "a z",
+        "z a"
+      ],
+      "answer": 3,
+      "explain": "derive(Ord) আগে প্রথম field (rank) দিয়ে তুলনা করে, সমান হলে পরের field দিয়ে। তাই ক্রম: (1,z), (3,a), (3,b)।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`Display` trait `#[derive(Display)]` দিয়ে পাওয়া যায়।",
+      "answer": false,
+      "explain": "Display derive হয় না, কারণ user-কে কেমন দেখাবে সেটা compiler জানে না। impl Display নিজে লিখতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "use std::ops::Add;\n\n#[derive(Debug, Clone, Copy)]\nstruct Money(u32);\n\nimpl Add for Money {\n    type Output = Money;\n    fn add(self, o: Money) -> Money {\n        Money(self.0 + o.0)\n    }\n}\n\nimpl From<u32> for Money {\n    fn from(n: u32) -> Money {\n        Money(n * 100)\n    }\n}\n\nfn main() {\n    let a: Money = 2.into();\n    let b = Money(5);\n    println!(\"{:?}\", a + b);\n}",
+      "options": [
+        "compile error",
+        "Money(205)",
+        "Money(7)",
+        "Money(200)"
+      ],
+      "answer": 1,
+      "explain": "2.into() ডাকে From<u32>, তাই Money(200)। তারপর Add দিয়ে 200 + 5 = 205।"
+    }
+  ]
+}

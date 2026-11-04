@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এ `let` দিয়ে বানানো variable ডিফল্টভাবে বদলানো যায় না।",
+      "answer": true,
+      "explain": "ডিফল্টভাবে সব variable immutable। বদলাতে চাইলে `let mut` লিখতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let x = 5;\n    let x = x * 2;\n    println!(\"{x}\");\n}",
+      "options": [
+        "10",
+        "5",
+        "compile error: x already defined",
+        "55"
+      ],
+      "answer": 0,
+      "explain": "দ্বিতীয় `let` নতুন একটা `x` বানায় (shadowing) যার মান `5 * 2 = 10`। এটা error নয়।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let count = 1;\n    count += 1;\n    println!(\"{count}\");\n}",
+      "answer": 3,
+      "explain": "`count` `mut` নয়, তাই লাইন ৩-এ মান বদলাতে গেলে E0384: cannot assign twice to immutable variable আসে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let x = 1;\n    {\n        let x = 2;\n        println!(\"{x}\");\n    }\n    println!(\"{x}\");\n}",
+      "options": [
+        "2\n1",
+        "1\n1",
+        "2\n2",
+        "1\n2"
+      ],
+      "answer": 0,
+      "explain": "ভেতরের `{ }`-এ shadow করা `x` শুধু সেই scope-এ থাকে। বাইরে এসে আগের `x = 1` ফিরে আসে।"
+    },
+    {
+      "type": "fill",
+      "q": "ধ্রুব মান বানানোর keyword-টা পূরণ করো।",
+      "code": "___ MAX: u32 = 10;",
+      "answer": [
+        "const"
+      ],
+      "explain": "`const` সবসময় ধ্রুব। এর type লিখতেই হয়, আর নাম লেখা হয় `UPPER_CASE`-এ।"
+    },
+    {
+      "type": "truefalse",
+      "q": "shadowing দিয়ে একই নামে অন্য type-এর variable বানানো যায়।",
+      "answer": true,
+      "explain": "shadowing আসলে নতুন variable তৈরি করে, তাই `let s = \" \"; let s = s.len();` এর মতো type বদলানো চলে। `mut` দিয়ে type বদলানো যায় না।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন কোডটা compile হবে?",
+      "options": [
+        "`let mut a = 5; a = \"five\";`",
+        "`let a = 5; let a = \"five\";`",
+        "`let a = 5; a = 6;`",
+        "`const A = 5;`"
+      ],
+      "answer": 1,
+      "explain": "shadowing-এ type বদলানো চলে। `mut` দিয়ে type বদলানো যায় না, `mut` ছাড়া মান বদলানো যায় না, আর `const`-এ type লিখতেই হয়।"
+    },
+    {
+      "type": "order",
+      "q": "এই program-এর লাইনগুলো ঠিক ক্রমে সাজাও (ফল ৩০)।",
+      "lines": [
+        "let mut n = 1;",
+        "n += 2;",
+        "let n = n * 10;",
+        "println!(\"{n}\");"
+      ],
+      "explain": "n শুরুতে ১, `+= 2` করে ৩, তারপর shadowing করে `3 * 10 = 30`, শেষে print।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut total = 0;\n    total += 4;\n    total *= 3;\n    println!(\"{total}\");\n}",
+      "options": [
+        "12",
+        "7",
+        "4",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "প্রথমে `0 + 4 = 4`, তারপর `4 * 3 = 12`। `mut` আছে বলে বারবার বদলানো যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "fn main() {\n    let a = 5;\n    let mut b = a;\n    b += 1;\n    let a = a + b;\n    println!(\"{a} {b}\");\n}",
+      "options": [
+        "11 6",
+        "10 6",
+        "6 6",
+        "11 5"
+      ],
+      "answer": 0,
+      "explain": "`b = 5` থেকে বেড়ে ৬ হয়। নতুন `a` হলো পুরোনো `a` (৫) আর `b` (৬)-এর যোগফল ১১।"
+    }
+  ]
+}

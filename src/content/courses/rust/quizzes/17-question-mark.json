@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`expr?`-এ `Err` পেলে function সাথে সাথে সেই `Err` ফেরত দিয়ে থেমে যায়।",
+      "answer": true,
+      "explain": "? হলো early return-এর ছোট রূপ। Ok হলে ভেতরের মান বের করে কাজ চালিয়ে যায়, Err হলে ফেরত দিয়ে বের হয়ে যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "use std::num::ParseIntError;\n\nfn twice(s: &str) -> Result<i32, ParseIntError> {\n    let n = s.parse::<i32>()?;\n    Ok(n * 2)\n}\n\nfn main() {\n    println!(\"{:?}\", twice(\"8\"));\n}",
+      "options": [
+        "Some(16)",
+        "Ok(16)",
+        "16",
+        "Ok(8)"
+      ],
+      "answer": 1,
+      "explain": "parse সফল হয়, ? ভেতরের 8 বের করে। তারপর 8 * 2 = 16 কে Ok-এ মুড়ে ফেরত দেওয়া হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn first_num(a: &str, b: &str) -> Result<i32, std::num::ParseIntError> {\n    let x = a.parse::<i32>()?;\n    println!(\"got x\");\n    let y = b.parse::<i32>()?;\n    println!(\"got y\");\n    Ok(x + y)\n}\n\nfn main() {\n    let r = first_num(\"1\", \"z\");\n    println!(\"{}\", r.is_err());\n}",
+      "options": [
+        "true",
+        "got x\ngot y\nfalse",
+        "got x\ntrue",
+        "got x\ngot y\ntrue"
+      ],
+      "answer": 2,
+      "explain": "a ঠিক আছে, তাই \"got x\" print হয়। b-তে ? Err পায় আর সাথে সাথে ফেরত দেয়, তাই \"got y\" আর আসে না। is_err() তাই true।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let s = \"12\";\n    let n: i32 = s.parse()?;\n    println!(\"{n}\");\n}",
+      "answer": 3,
+      "explain": "main কিছুই ফেরত দেয় না (`()`), তাই ভেতরে ? চলে না (E0277)। main-এর return type `Result<(), Box<dyn Error>>` করলে চলবে।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে `ParseIntError` নিজে থেকে `MyError`-এ বদলে `?` কাজ করবে?",
+      "code": "impl ___<ParseIntError> for MyError {\n    fn from(e: ParseIntError) -> MyError {\n        MyError::Parse(e)\n    }\n}",
+      "answer": [
+        "From"
+      ],
+      "explain": "`From<A> for B` থাকলে ? Err-এর ভেতরের A-কে নিজেই B-তে রূপান্তর করে নেয়।"
+    },
+    {
+      "type": "choice",
+      "q": "নিজের error type-এ `{}` দিয়ে print করতে হলে কোনটা implement করা লাগে?",
+      "options": [
+        "`fmt::Debug`",
+        "`Clone`",
+        "`Copy`",
+        "`fmt::Display`"
+      ],
+      "answer": 3,
+      "explain": "`{}` চলে Display দিয়ে (মানুষের পড়ার বার্তা)। `{:?}` চলে Debug দিয়ে (debugging-এর জন্য)।"
+    },
+    {
+      "type": "order",
+      "q": "? ব্যবহার করে একটা function-এর লাইনগুলো ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`fn parse_it(s: &str) -> Result<i32, ParseIntError> {`",
+        "`let n = s.parse::<i32>()?;`",
+        "`let m = n + 1;`",
+        "`Ok(m)`",
+        "`}`"
+      ],
+      "explain": "signature আগে, তারপর ? দিয়ে মান বের করা, হিসাব, আর শেষে সফল মান Ok-এ মুড়ে ফেরত।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`Box<dyn Error>` ব্যবহার করলে `?` দিয়ে `ParseIntError` আর অন্য std error একই function থেকে ফেরত দেওয়া যায়।",
+      "answer": true,
+      "explain": "Box<dyn Error> যেকোনো Error-এর জন্য জায়গা দেয়, তাই ? সব ধরনের error-ই এতে ভরে দিতে পারে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "use std::error::Error;\n\nfn check(n: i32) -> Result<i32, Box<dyn Error>> {\n    if n < 0 {\n        return Err(\"negative\".into());\n    }\n    Ok(n)\n}\n\nfn main() {\n    match check(-1) {\n        Ok(n) => println!(\"ok {n}\"),\n        Err(e) => println!(\"err: {e}\"),\n    }\n}",
+      "options": [
+        "compile error",
+        "err: negative",
+        "ok -1",
+        "err: \"negative\""
+      ],
+      "answer": 1,
+      "explain": "\"negative\".into() লেখাটাকে Box<dyn Error>-এ বদলায়। `{}` দিয়ে print করলে উদ্ধৃতি চিহ্ন ছাড়া বার্তাটাই দেখায়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন: কী print হবে?",
+      "code": "use std::num::ParseIntError;\n\nenum E {\n    Parse(ParseIntError),\n    Neg,\n}\n\nimpl From<ParseIntError> for E {\n    fn from(e: ParseIntError) -> E {\n        E::Parse(e)\n    }\n}\n\nfn f(s: &str) -> Result<i32, E> {\n    let n: i32 = s.parse()?;\n    if n < 0 {\n        return Err(E::Neg);\n    }\n    Ok(n)\n}\n\nfn main() {\n    for s in [\"4\", \"-4\", \"x\"] {\n        let tag = match f(s) {\n            Ok(_) => \"ok\",\n            Err(E::Neg) => \"neg\",\n            Err(E::Parse(_)) => \"parse\",\n        };\n        print!(\"{tag} \");\n    }\n}",
+      "options": [
+        "ok parse parse",
+        "ok neg ok",
+        "ok neg parse",
+        "ok neg neg"
+      ],
+      "answer": 2,
+      "explain": "\"4\" সফল। \"-4\" parse হয় কিন্তু ঋণাত্মক, তাই E::Neg। \"x\" parse-ই হয় না, ? সেই ভুলকে From দিয়ে E::Parse বানায়।"
+    }
+  ]
+}
