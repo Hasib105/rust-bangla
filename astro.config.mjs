@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
 import vercel from '@astrojs/vercel';
 
 // Marks Rust blocks so the client can add ▶ Run buttons:
@@ -34,27 +33,4 @@ export default defineConfig({
   markdown: {
     shikiConfig: { theme: 'github-dark-dimmed', transformers: [runMarker] },
   },
-  integrations: [
-    starlight({
-      title: 'Rust বাংলা ডকস',
-      description: 'Rust-এর বাংলা ডকুমেন্টেশন: রেফারেন্স, চিটশিট আর গাইড।',
-      logo: { src: './src/assets/logo.png', replacesTitle: false },
-      favicon: '/favicon.png',
-      defaultLocale: 'root',
-      locales: { root: { label: 'বাংলা', lang: 'bn' } },
-      social: [
-        { icon: 'youtube', label: 'YouTube', href: 'https://www.youtube.com/@RustBangla' },
-      ],
-      customCss: ['./src/styles/starlight.css'],
-      expressiveCode: false, // lessons use Astro's shiki + our run-marker transformer
-      head: [
-        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.googleapis.com' } },
-        { tag: 'link', attrs: { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap' } },
-      ],
-      sidebar: [
-        { label: '← কোর্সে ফিরে যাও', link: base },
-        { label: 'ডকুমেন্টেশন', items: [{ autogenerate: { directory: 'docs' } }] },
-      ],
-    }),
-  ],
 });

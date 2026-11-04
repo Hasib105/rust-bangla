@@ -1,8 +1,6 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { docsLoader, i18nLoader } from '@astrojs/starlight/loaders';
-import { docsSchema, i18nSchema } from '@astrojs/starlight/schema';
 
 // src/content/courses/<course>/lessons/NN-slug.md  ->  id "<course>/NN-slug"
 const courseId = (folder: string) => ({ entry }: { entry: string }) =>
@@ -36,8 +34,6 @@ const quizzes = defineCollection({
 });
 
 export const collections = {
-  docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
-  i18n: defineCollection({ loader: i18nLoader(), schema: i18nSchema() }),
   lessons,
   quizzes,
 };

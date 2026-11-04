@@ -3,7 +3,7 @@ import '../styles/global.css';
 import { site } from '../data/courses';
 import { icon } from '../scripts/icons';
 
-interface Props { title?: string; description?: string; nav?: 'courses' | 'profile' | 'docs' }
+interface Props { title?: string; description?: string; nav?: 'courses' | 'profile' }
 const { title, description = 'Rust শেখো বাংলায়, খেলতে খেলতে। ছোট পাঠ, ইন্টারঅ্যাকটিভ প্রশ্ন, XP আর ব্যাজ। লগইন লাগে না, পুরোপুরি ফ্রি।', nav } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const fullTitle = title ? `${title} | Rust বাংলা` : 'Rust বাংলা: খেলতে খেলতে Rust শেখো';
@@ -40,7 +40,6 @@ const og = new URL(base + 'og.png', Astro.site);
         <a class="brand" href={base}><img src={base + 'logo-mark-256.png'} alt="Rust বাংলা" width="34" height="34" /><span>Rust বাংলা</span></a>
         <nav class="nav">
           <a href={base} aria-current={nav === 'courses' ? 'page' : undefined}><Fragment set:html={icon('grid', 17)} />কোর্স</a>
-          <a href={base + 'docs/'} aria-current={nav === 'docs' ? 'page' : undefined}><Fragment set:html={icon('docs', 17)} />ডকস</a>
           <a href={base + 'profile/'} aria-current={nav === 'profile' ? 'page' : undefined}><Fragment set:html={icon('user', 17)} />প্রোফাইল</a>
         </nav>
         <div class="right">
@@ -63,7 +62,6 @@ const og = new URL(base + 'og.png', Astro.site);
     </footer>
     <nav class="bottomnav" aria-label="মেনু">
       <a href={base} aria-current={nav === 'courses' ? 'page' : undefined}><Fragment set:html={icon('grid', 20)} />কোর্স</a>
-      <a href={base + 'docs/'}><Fragment set:html={icon('docs', 20)} />ডকস</a>
       <a href={base + 'profile/'} aria-current={nav === 'profile' ? 'page' : undefined}><Fragment set:html={icon('user', 20)} />প্রোফাইল</a>
     </nav>
     <div id="toasts"></div>

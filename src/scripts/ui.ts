@@ -97,7 +97,6 @@ function initTheme() {
     else delete document.documentElement.dataset.theme;
     try {
       localStorage.setItem('rb-theme', dark ? 'dark' : 'light');
-      localStorage.setItem('starlight-theme', dark ? 'dark' : 'light');
     } catch {}
     paint();
   }));

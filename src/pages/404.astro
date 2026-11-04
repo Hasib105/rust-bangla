@@ -1,0 +1,11 @@
+---
+import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+<Base title="পাতা পাওয়া যায়নি">
+  <section class="narrow challenge">
+    <h1 class="page-title">৪০৪: পাতাটা পাওয়া যায়নি</h1>
+    <p class="muted">লিংকটা হয়তো বদলে গেছে। কোর্সের তালিকা থেকে আবার শুরু করো।</p>
+    <a class="btn" href={base}>কোর্সে যাও</a>
+  </section>
+</Base>
