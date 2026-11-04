@@ -5,8 +5,12 @@
 import pg from 'pg';
 import { getMigrations } from 'better-auth/db/migration';
 
-const url = process.env.DATABASE_URL;
-if (!url) { console.log('[migrate] DATABASE_URL not set, skipping'); process.exit(0); }
+const e = process.env;
+const key = ['DATABASE_URL', 'POSTGRES_URL', 'NEON_DATABASE_URL'].find((k) => e[k])
+  ?? Object.keys(e).find((n) => /(_DATABASE_URL|_POSTGRES_URL)$/.test(n) && !/UNPOOLED|NON_POOLING/.test(n) && e[n]);
+const url = key && e[key];
+if (!url) { console.log('[migrate] no DATABASE_URL / POSTGRES_URL set, skipping'); process.exit(0); }
+console.log('[migrate] using', key);
 const pool = new pg.Pool({ connectionString: url, ssl: /localhost|127\.0\.0\.1/.test(url) ? false : { rejectUnauthorized: true } });
 
 const { toBeCreated, toBeAdded, runMigrations } = await getMigrations({

@@ -1,6 +1,6 @@
 // Setup check: which login settings are present/valid (never prints values) and whether the DB answers.
 import type { APIRoute } from 'astro';
-import { getPool } from '../../lib/db';
+import { getPool, databaseUrl } from '../../lib/db';
 
 export const prerender = false;
 
@@ -11,7 +11,7 @@ export const GET: APIRoute = async () => {
   let urlOk = false;
   try { urlOk = !!url && /^https?:\/\/[^\s/]+$/.test(url.replace(/\/$/, '')) && !!new URL(url); } catch {}
   const checks: Record<string, string> = {
-    DATABASE_URL: env('DATABASE_URL') ? (/^postgres(ql)?:\/\//.test(env('DATABASE_URL')!) ? 'ok' : 'set but not a postgres:// URL') : 'MISSING (connect Neon in Storage)',
+    DATABASE_URL: (() => { const d = databaseUrl(); return !d ? 'MISSING (connect Neon in Storage → Connect Project)' : /^postgres(ql)?:\/\//.test(d.url) ? `ok (from ${d.name})` : `${d.name} is set but not a postgres:// URL`; })(),
     BETTER_AUTH_SECRET: !env('BETTER_AUTH_SECRET') ? 'MISSING' : env('BETTER_AUTH_SECRET')!.length < 32 ? 'too short (need 32+ chars)' : 'ok',
     BETTER_AUTH_URL: !url ? 'MISSING' : urlOk ? `ok (${url})` : 'INVALID: must be just the site address like https://rust-bangla.vercel.app',
     GITHUB_CLIENT_ID: !env('GITHUB_CLIENT_ID') ? 'MISSING' : /\s/.test(env('GITHUB_CLIENT_ID')!) ? 'INVALID: looks like text, paste the real Client ID' : 'ok',
