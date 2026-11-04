@@ -86,6 +86,9 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
 </Base>
 
 <script>
+  import { ensureLogin } from '../../scripts/account';
+  import { site } from '../../data/courses';
+  const REQUIRE = site.requireLogin;
   import { runQuiz, starsFor } from '../../scripts/quiz';
   import { load, save, gain, bn } from '../../scripts/store';
   import { confetti, sound, announceBadges, toast } from '../../scripts/ui';
@@ -129,6 +132,7 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
 
   let lastMode = 'play';
   function start(mode = lastMode) {
+    if (!ensureLogin(REQUIRE)) return;
     lastMode = mode;
     layer.hidden = false;
     document.body.style.overflow = 'hidden';

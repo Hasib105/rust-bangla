@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import cloudflare from '@astrojs/cloudflare';
 
 // Marks Rust blocks so the client can add ▶ Run buttons:
 //   ```rust               -> runnable (data-run)
@@ -20,13 +21,16 @@ const runMarker = {
   },
 };
 
-const site = process.env.SITE_URL || 'https://hasib105.github.io';
-const base = process.env.BASE_PATH ?? '/rust-bangla';
+// Hosted on Cloudflare Workers at the domain root. Set SITE_URL to the real domain when you have one.
+const site = process.env.SITE_URL || 'https://rust-bangla.workers.dev';
+const base = process.env.BASE_PATH ?? '/';
 
 export default defineConfig({
   site,
   base,
-  trailingSlash: 'always',
+  trailingSlash: 'ignore', // API routes (better-auth callbacks) must not be redirected
+  // Pages are prerendered (static); only /api/* runs on the Worker (login + progress sync).
+  adapter: cloudflare({ prerenderEnvironment: 'node' }),
   markdown: {
     shikiConfig: { theme: 'github-dark-dimmed', transformers: [runMarker] },
   },
@@ -48,7 +52,7 @@ export default defineConfig({
         { tag: 'link', attrs: { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap' } },
       ],
       sidebar: [
-        { label: '← কোর্সে ফিরে যাও', link: base + '/' },
+        { label: '← কোর্সে ফিরে যাও', link: base },
         { label: 'ডকুমেন্টেশন', items: [{ autogenerate: { directory: 'docs' } }] },
       ],
     }),

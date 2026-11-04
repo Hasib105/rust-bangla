@@ -401,3 +401,13 @@ mark.blank { background: rgba(108,156,255,.3); color: #cfe0ff; border-radius: 4p
 .cert .name { font-size: 32px; font-weight: 700; border-bottom: 2px solid #e8590c; display: inline-block; padding: 0 30px; margin: 14px 0; }
 .cert img { width: 80px; }
 @media print { body * { visibility: hidden; } .cert, .cert * { visibility: visible; } .cert { position: fixed; inset: 0; margin: 0; } }
+
+/* ---------- account ---------- */
+.avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--line); display: block; }
+.avatar.lg { width: 56px; height: 56px; }
+.acct-slot { display: flex; }
+.login-btn { padding: 5px 12px; }
+@media (max-width: 760px) { .login-btn span { display: none; } }
+.acct { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.acct > div { flex: 1; min-width: 220px; }
+.acct small { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14.5px; }

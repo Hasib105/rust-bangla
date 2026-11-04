@@ -32,6 +32,9 @@ const base = baseUrl();
 </Base>
 
 <script>
+  import { ensureLogin } from '../../../scripts/account';
+  import { site } from '../../../data/courses';
+  const REQUIRE = site.requireLogin;
   import { runQuiz } from '../../../scripts/quiz';
   import { load, save, gain, bn } from '../../../scripts/store';
   import { confetti, sound, announceBadges } from '../../../scripts/ui';
@@ -47,6 +50,7 @@ const base = baseUrl();
   const pick = () => [...data.pool].sort(() => Math.random() - 0.5).slice(0, 10);
 
   function start() {
+    if (!ensureLogin(REQUIRE)) return;
     layer.hidden = false;
     document.body.style.overflow = 'hidden';
     runQuiz(layer, pick(), {

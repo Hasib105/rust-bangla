@@ -63,5 +63,7 @@ export const courseById = (id: string) => courses.find((c) => c.id === id)!;
 
 export const site = {
   name: 'Rust বাংলা',
+  // true: learners must sign in with GitHub before playing. false: play as a guest, sign in to sync.
+  requireLogin: false,
   youtube: 'https://www.youtube.com/@RustBangla',
 };

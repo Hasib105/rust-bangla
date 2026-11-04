@@ -45,6 +45,8 @@ const base = baseUrl();
 </Base>
 
 <script>
+  import { ensureLogin } from '../../scripts/account';
+  import { site } from '../../data/courses';
   import { runQuiz } from '../../scripts/quiz';
   import { load, save, gain, bn } from '../../scripts/store';
   import { confetti, sound, announceBadges } from '../../scripts/ui';
@@ -68,6 +70,7 @@ const base = baseUrl();
   showCert();
 
   document.getElementById('go')!.addEventListener('click', () => {
+    if (!ensureLogin(site.requireLogin)) return;
     layer.hidden = false;
     document.body.style.overflow = 'hidden';
     runQuiz(layer, [...data.pool].sort(() => Math.random() - 0.5).slice(0, 30), {

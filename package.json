@@ -6,14 +6,23 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "astro build && wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state",
     "astro": "astro",
-    "check:content": "node scripts/check-content.mjs"
+    "check:content": "node scripts/check-content.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply rust-bangla --local --persist-to .wrangler/state",
+    "db:migrate": "wrangler d1 migrations apply rust-bangla --remote",
+    "deploy": "astro build && wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.4.4",
     "@astrojs/starlight": "^0.42.8",
     "astro": "^7.2.10",
+    "better-auth": "^1.7.16",
+    "kysely": "^0.29.8",
     "sharp": "^0.35.3",
     "shiki": "^4.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.157.0"
   }
 }

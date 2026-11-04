@@ -46,6 +46,7 @@ const og = new URL(base + 'og.png', Astro.site);
         <div class="right">
           <a class="pill fire" href={base + 'profile/'} title="টানা কত দিন শিখছো"><Fragment set:html={icon('flame', 16)} /><span data-stat="streak">০</span></a>
           <a class="pill xp" href={base + 'profile/'} title="মোট XP"><Fragment set:html={icon('bolt', 16)} /><span data-stat="xp">০</span></a>
+          <span data-account class="acct-slot"></span>
           <button class="iconbtn" data-theme-toggle title="লাইট/ডার্ক" aria-label="লাইট/ডার্ক মোড"></button>
         </div>
       </div>
@@ -68,6 +69,7 @@ const og = new URL(base + 'og.png', Astro.site);
     <div id="toasts"></div>
     <script>
       import { initChrome } from '../scripts/ui';
+      import '../scripts/account';
       initChrome();
     </script>
   </body>
