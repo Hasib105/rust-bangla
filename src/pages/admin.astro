@@ -1,0 +1,106 @@
+---
+// Private stats page. Only GitHub accounts listed in ADMIN_GITHUB_IDS (default: Hasib105) can open it;
+// everyone else gets a 404. Rendered on demand (it reads the database), never cached.
+import Base from '../layouts/Base.astro';
+import { getAuth } from '../lib/auth';
+import { getPool } from '../lib/db';
+import { bnN } from '../data/course';
+
+export const prerender = false;
+
+const ADMIN_IDS = (process.env.ADMIN_GITHUB_IDS || import.meta.env.ADMIN_GITHUB_IDS || '101237375').split(',').map((s: string) => s.trim());
+const session = await getAuth().api.getSession({ headers: Astro.request.headers }).catch(() => null);
+const db = getPool();
+let isAdmin = false;
+if (session?.user) {
+  const { rows } = await db.query(`select 1 from account where "userId" = $1 and "providerId" = 'github' and "accountId" = any($2)`, [session.user.id, ADMIN_IDS]);
+  isAdmin = rows.length > 0;
+}
+if (!isAdmin) return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+Astro.response.headers.set('cache-control', 'no-store');
+
+const [totals, users, lessons, recent, daily] = await Promise.all([
+  db.query(`select
+      (select count(*) from "user")::int as users,
+      (select count(*) from "user" where "createdAt" > now() - interval '7 days')::int as new7,
+      (select count(distinct "userId") from attempts where "createdAt" > now() - interval '1 day')::int as active1,
+      (select count(distinct "userId") from attempts where "createdAt" > now() - interval '7 days')::int as active7,
+      (select count(*) from attempts)::int as attempts,
+      (select count(*) from attempts where "createdAt" > now() - interval '1 day')::int as attempts1`),
+  db.query(`select u.name, u.email, u.image, u."createdAt", coalesce(p.xp, 0) as xp,
+      (select count(*) from lesson_progress lp where lp."userId" = u.id)::int as done,
+      (select max("createdAt") from attempts a where a."userId" = u.id) as last
+    from "user" u left join progress p on p."userId" = u.id
+    order by last desc nulls last, u."createdAt" desc limit 200`),
+  db.query(`select "lessonKey" as key, count(*)::int as learners, round(avg(best::numeric / total) * 100)::int as avg,
+      sum(attempts)::int as plays from lesson_progress group by "lessonKey" order by learners desc, key`),
+  db.query(`select a.kind, a.ref, a.mode, a.score, a.total, a."createdAt", u.name from attempts a join "user" u on u.id = a."userId"
+    order by a."createdAt" desc limit 40`),
+  db.query(`select to_char(d, 'MM-DD') as day, coalesce(n, 0)::int as n from generate_series(current_date - 13, current_date, '1 day') d
+    left join (select "createdAt"::date as day, count(distinct "userId") as n from attempts group by 1) x on x.day = d order by d`),
+]);
+const t = totals.rows[0];
+const when = (d: Date | null) => (d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+const maxDay = Math.max(1, ...daily.rows.map((r) => r.n));
+---
+<Base title="অ্যাডমিন" noindex>
+  <div class="wrap" style="padding-bottom:40px">
+    <h1 class="page-title">অ্যাডমিন</h1>
+    <p class="muted">শুধু তুমি দেখতে পাও। সময় বাংলাদেশ সময়ে।</p>
+
+    <div class="stats4">
+      <div class="stat"><div class="k">মোট ইউজার</div><div class="v">{bnN(t.users)}</div><small class="muted">গত ৭ দিনে নতুন {bnN(t.new7)}</small></div>
+      <div class="stat"><div class="k">আজ সক্রিয়</div><div class="v">{bnN(t.active1)}</div><small class="muted">গত ৭ দিনে {bnN(t.active7)}</small></div>
+      <div class="stat"><div class="k">মোট খেলা</div><div class="v">{bnN(t.attempts)}</div><small class="muted">আজ {bnN(t.attempts1)}</small></div>
+      <div class="stat"><div class="k">পাঠ শেষ (মোট)</div><div class="v">{bnN(lessons.rows.reduce((n, r) => n + r.learners, 0))}</div></div>
+    </div>
+
+    <h2>গত ১৪ দিনে সক্রিয় ইউজার</h2>
+    <div class="panel" style="display:flex;align-items:flex-end;gap:6px;height:150px">
+      {daily.rows.map((r) => (
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end" title={`${r.day}: ${r.n}`}>
+          <small class="muted">{r.n || ''}</small>
+          <div style={`width:100%;border-radius:6px 6px 0 0;background:var(--accent);height:${(r.n / maxDay) * 100}%;min-height:2px`}></div>
+          <small class="muted" style="font-size:11px">{r.day}</small>
+        </div>
+      ))}
+    </div>
+
+    <h2 style="margin-top:30px">ইউজার ({bnN(users.rows.length)})</h2>
+    <div class="panel" style="overflow-x:auto;padding:0">
+      <table class="adm">
+        <thead><tr><th></th><th>নাম</th><th>ইমেইল</th><th>XP</th><th>পাঠ শেষ</th><th>যোগ দিয়েছে</th><th>শেষ খেলা</th></tr></thead>
+        <tbody>
+          {users.rows.map((u) => (
+            <tr>
+              <td>{u.image && <img class="avatar" src={u.image} alt="" width="28" height="28" loading="lazy" />}</td>
+              <td>{u.name}</td><td class="muted">{u.email}</td><td>{u.xp}</td><td>{u.done}</td><td>{when(u.createdAt)}</td><td>{when(u.last)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="margin-top:30px">পাঠ অনুযায়ী</h2>
+    <div class="panel" style="overflow-x:auto;padding:0">
+      <table class="adm">
+        <thead><tr><th>পাঠ</th><th>শেষ করেছে</th><th>মোট খেলা</th><th>গড় স্কোর</th></tr></thead>
+        <tbody>{lessons.rows.map((r) => <tr><td>{r.key}</td><td>{r.learners}</td><td>{r.plays}</td><td>{r.avg}%</td></tr>)}</tbody>
+      </table>
+    </div>
+
+    <h2 style="margin-top:30px">সাম্প্রতিক খেলা</h2>
+    <div class="panel" style="overflow-x:auto;padding:0">
+      <table class="adm">
+        <thead><tr><th>সময়</th><th>ইউজার</th><th>ধরন</th><th>কী</th><th>মোড</th><th>স্কোর</th></tr></thead>
+        <tbody>{recent.rows.map((r) => <tr><td>{when(r.createdAt)}</td><td>{r.name}</td><td>{r.kind}</td><td>{r.ref}</td><td>{r.mode ?? '—'}</td><td>{r.score}/{r.total}</td></tr>)}</tbody>
+      </table>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .adm { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .adm th, .adm td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .adm th { background: var(--soft); font-weight: 600; color: var(--muted); }
+</style>
