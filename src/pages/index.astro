@@ -26,7 +26,12 @@ const videos = course.flatMap((p) => p.lessons).filter((l) => l.video).length;
           <span>▶ ব্রাউজারেই কোড চালাও</span>
         </div>
       </div>
-      <img class="hero-logo" src={base + 'logo-mark.png'} alt="Rust বাংলা" width="300" height="300" />
+      <div class="hero-art">
+        <img class="hero-logo" src={base + 'logo-mark.png'} alt="Rust বাংলা" width="300" height="300" />
+        <span class="orb" aria-hidden="true">🦀</span>
+        <span class="orb" aria-hidden="true">⚡</span>
+        <span class="orb" aria-hidden="true">🧩</span>
+      </div>
     </div>
   </section>
 

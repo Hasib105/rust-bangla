@@ -5,20 +5,17 @@ part: 3
 order: 15
 summary: "HashMap key দিয়ে value খুঁজে দেয়, প্রায় এক ধাপে। সাথে শিখবে entry দিয়ে গোনা, sorted BTreeMap আর duplicate-ছাড়া HashSet।"
 icon: "🗺️"
-minutes: 9
+minutes: 5
 video: "3FC3MaOfHQw"
 ---
 
 ## কেন শিখবো?
 
-"রহিমের নম্বর কত?" Vec-এ খুঁজতে হলে প্রথম থেকে প্রতিটা element দেখতে হয়। ডেটা যত বাড়ে, ততই ধীর।
-Python-এর `dict` বা JS-এর `Map`-এর মতো **`HashMap<K, V>`** key থেকে সরাসরি value-তে চলে যায়, আর গড়ে সময় লাগে প্রায় সমান, ডেটা ১০ হোক বা ১০ লাখ।
-শব্দ গোনা, cache, user id থেকে নাম খোঁজা, এই ধরনের কাজে HashMap রোজ লাগে।
+Vec-এ "রহিমের নম্বর কত?" খুঁজতে প্রতিটা element দেখতে হয়। Python-এর `dict`-এর মতো **`HashMap<K, V>`** key থেকে সরাসরি value-তে যায়, ডেটা ১০ হোক বা ১০ লাখ।
 
-## insert আর get
+## `insert` আর `get`
 
-`HashMap` std library-র `collections`-এ থাকে, তাই আগে `use` করতে হয়। `insert(key, value)` দিয়ে ঢোকাও। একই key আবার insert করলে পুরোনো value বদলে যায়।
-`get(&key)` ফেরত দেয় `Option`, কারণ key নাও থাকতে পারে। আর `map[key]` সরাসরি value দেয়, কিন্তু key না থাকলে panic।
+`use std::collections::HashMap;` লাগে। একই key আবার `insert` করলে value বদলায়। `get(&key)` দেয় `Option`, আর `map[key]` key না থাকলে panic করে।
 
 ```rust
 use std::collections::HashMap;
@@ -30,28 +27,21 @@ fn main() {
 
     println!("{:?}", scores.get("rahim"));
     println!("{:?}", scores.get("nobody"));
-    println!("{}", scores.len());
 
     scores.insert("rahim", 85); // same key: old value replaced
-    println!("{}", scores["rahim"]);
-    println!("{}", scores.len());
+    println!("{} {}", scores["rahim"], scores.len());
 }
 ```
 
 ```text
 Some(80)
 None
-2
-85
-2
+85 2
 ```
 
-## entry().or_insert: গুনতে গুনতে বাড়ানো
+## `entry().or_insert`: গোনা
 
-শব্দ গোনার কাজটা ভাবো: শব্দটা আগে দেখা থাকলে সংখ্যা বাড়াও, না থাকলে ০ থেকে শুরু করো। এই "আছে কি নেই" দেখার ঝামেলা সামলায় `entry(key).or_insert(0)`।
-সে map-এর ভেতরের value-র একটা `&mut` ফেরত দেয়, তাই `*` দিয়ে সোজা `+= 1` করা যায়।
-
-HashMap-এর iterate করার ক্রম **এলোমেলো** (প্রতিবার আলাদা হতে পারে)। তাই output সবসময় এক রাখতে হলে আগে Vec-এ তুলে sort করো।
+আছে কি নেই দেখার ঝামেলা সামলায় `entry(key).or_insert(0)`। সে value-র `&mut` দেয়, তাই `*... += 1` চলে। HashMap-এর ক্রম **এলোমেলো**, তাই output ঠিক রাখতে আগে Vec-এ তুলে sort করো।
 
 ```rust
 use std::collections::HashMap;
@@ -77,10 +67,9 @@ b: 2
 c: 1
 ```
 
-## BTreeMap: নিজে থেকেই sorted
+## `BTreeMap`: নিজে থেকেই sorted
 
-প্রতিবার sort করা বিরক্তিকর হলে `BTreeMap` নাও। API প্রায় একই, কিন্তু key সবসময় ছোট থেকে বড় ক্রমে থাকে। দাম হিসেবে lookup একটু ধীর (গড়ে O(log n))।
-সাজানো output লাগলে BTreeMap, শুধু দ্রুত খোঁজা লাগলে HashMap।
+API প্রায় একই, কিন্তু key সবসময় ছোট থেকে বড় ক্রমে থাকে। সাজানো output লাগলে `BTreeMap`, শুধু দ্রুত খোঁজা লাগলে `HashMap`।
 
 ```rust
 use std::collections::BTreeMap;
@@ -102,9 +91,9 @@ mango = 1
 pear = 3
 ```
 
-## HashSet: শুধু key, duplicate নেই
+## `HashSet`: duplicate নেই
 
-যদি শুধু জানতে চাও "এটা কি আছে?" বা duplicate বাদ দিতে চাও, value লাগে না। তখন `HashSet`। `insert` ফেরত দেয় `bool`: নতুন হলে `true`, আগে থেকে থাকলে `false`।
+শুধু "আছে কি?" জানতে বা duplicate বাদ দিতে `HashSet`। `insert` নতুন হলে `true`, আগে থাকলে `false` দেয়।
 
 ```rust
 use std::collections::HashSet;
@@ -113,8 +102,6 @@ fn main() {
     let mut seen = HashSet::new();
     println!("{}", seen.insert(3));
     println!("{}", seen.insert(3));
-    seen.insert(7);
-    println!("{}", seen.contains(&7));
     println!("{}", seen.len());
 }
 ```
@@ -122,13 +109,12 @@ fn main() {
 ```text
 true
 false
-true
-2
+1
 ```
 
 ## সাধারণ ভুল
 
-`insert` করলে key আর value দুটোই map-এর কাছে **move** হয়ে যায়। `String` key-র পরে সেই variable আর ব্যবহার করা যায় না:
+`insert` করলে key আর value map-এর কাছে **move** হয়, তাই `String` key পরে ব্যবহার করা যায় না:
 
 ```rust compile_fail
 use std::collections::HashMap;
@@ -141,11 +127,11 @@ fn main() {
 }
 ```
 
-`name` দরকার থাকলে `m.insert(name.clone(), 1)` লেখো, অথবা key হিসেবে `&str` ব্যবহার করো।
+`m.insert(name.clone(), 1)` লেখো, অথবা key হিসেবে `&str` নাও।
 
 ## নিজে করো
 
-`"hello"` শব্দের প্রতিটা অক্ষর কতবার আছে গুনে print করো, অক্ষরের ক্রমে। `chars()` দিয়ে অক্ষর পাবে, আর sorted ক্রমের জন্য `BTreeMap` নাও।
+`"hello"`-র প্রতিটা অক্ষর কতবার আছে গুনে অক্ষরের ক্রমে print করো। `BTreeMap` নাও।
 
 <details>
 <summary>সমাধান দেখো</summary>
@@ -175,8 +161,7 @@ o: 1
 
 ## মনে রাখো
 
-- `HashMap<K, V>` key থেকে value দ্রুত খুঁজে দেয়। `use std::collections::HashMap;` লাগে।
-- `get` দেয় `Option`, `map[key]` key না থাকলে panic করে। একই key আবার `insert` করলে value বদলায়।
-- গোনার জন্য `*map.entry(key).or_insert(0) += 1` হলো চেনা ছক।
-- HashMap-এর ক্রম এলোমেলো। ক্রম দরকার হলে sort করো, অথবা `BTreeMap` নাও।
-- `HashSet` শুধু key রাখে, duplicate ঢোকে না। `insert` ফেরত দেয় নতুন কি না।
+- `HashMap<K, V>` key থেকে value দ্রুত খোঁজে। `get` দেয় `Option`, `map[key]` panic করতে পারে।
+- গোনার ছক: `*map.entry(key).or_insert(0) += 1`।
+- HashMap-এর ক্রম এলোমেলো। ক্রম চাইলে sort করো বা `BTreeMap` নাও।
+- `HashSet` শুধু key রাখে, `insert` ফেরত দেয় নতুন কি না।

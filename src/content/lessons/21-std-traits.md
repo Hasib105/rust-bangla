@@ -5,18 +5,20 @@ part: 5
 order: 21
 summary: "std-এর জনপ্রিয় trait-গুলো, মানে Debug, Clone, PartialEq, Display, From আর Add, নিজের type-এ কীভাবে লাগাবে।"
 icon: "🧰"
-minutes: 10
+minutes: 6
 video: "TGcK37erIvA"
 ---
 
 ## কেন শিখবো?
 
-নিজের `struct` বানালে প্রথমে `println!("{:?}", p)` চলে না, `==` চলে না, কপিও করা যায় না। কারণ এই কাজগুলো সবই std-এর **trait**, আর তুমি এখনো কোনোটা implement করোনি।
-সুখবর হলো বেশিরভাগ trait এক লাইনে পাওয়া যায়। আর `+`, `println!("{}")` বা `.into()` নিজের type-এ চালাতে চাইলে একটা trait implement করলেই হয়।
+নিজের `struct`-এ `{:?}` চলে না, `==` চলে না, কপিও হয় না, কারণ এগুলো সবই std-এর **trait**। বেশিরভাগ trait এক লাইনে পাওয়া যায়, আর `+`, `{}` বা `.into()` চালাতে একটা trait implement করলেই হয়।
 
 ## `derive`: এক লাইনে trait
 
-struct-এর ওপরে `#[derive(...)]` লিখলে compiler নিজেই impl লিখে দেয়। শর্ত হলো, struct-এর সব field-এও সেই trait থাকতে হবে।
+`#[derive(...)]` লিখলে compiler নিজেই impl লিখে দেয়, তবে সব field-এও সেই trait থাকতে হবে।
+
+- `Debug`: `{:?}` print। `Clone`: `.clone()`। `PartialEq`: `==`। `Default`: সব field-এর ডিফল্ট মান।
+- `PartialOrd`/`Ord`: `<` আর `sort()`। struct-এর তুলনা field-এর ক্রমে হয়। `Hash`: `HashMap`-এর key হওয়া।
 
 ```rust
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -40,50 +42,9 @@ equal: true
 User { name: "", age: 0 }
 ```
 
-- `Debug`: `{:?}` দিয়ে print করা যায়।
-- `Clone`: `.clone()` দিয়ে কপি।
-- `PartialEq`: `==` আর `!=`।
-- `Default`: `User::default()` দিলে সব field-এর ডিফল্ট মান (শূন্য, ফাঁকা string)।
-
-## Ord, Eq আর Hash
-
-`PartialOrd` দিলে `<` `>` চলে, `Ord` দিলে `sort()` আর `max()` চলে। `Eq` মানে "পুরোপুরি সমান হওয়ার নিয়ম আছে" (float-এ `NaN` থাকে বলে `f64` শুধু `PartialEq`)। `Hash` দিলে type `HashMap`-এর key হতে পারে।
-struct-এর তুলনা field-এর ক্রমে হয়, মানে আগে `score`, সমান হলে তারপর `name`।
-
-```rust
-use std::collections::HashSet;
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-struct Player {
-    score: u32,
-    name: String,
-}
-
-fn main() {
-    let mut team = vec![
-        Player { score: 50, name: String::from("Zed") },
-        Player { score: 90, name: String::from("Amy") },
-        Player { score: 50, name: String::from("Bob") },
-    ];
-    team.sort();
-    for p in &team {
-        println!("{} {}", p.score, p.name);
-    }
-    let set: HashSet<Player> = team.iter().cloned().collect();
-    println!("unique: {}", set.len());
-}
-```
-
-```text
-50 Bob
-50 Zed
-90 Amy
-unique: 3
-```
-
 ## `Display`: `{}` দিয়ে সুন্দর print
 
-`Debug` programmer-এর জন্য, আর `Display` user-এর জন্য। এটা derive হয় না, নিজে লিখতে হয়, কারণ সুন্দর চেহারা কেমন হবে সেটা শুধু তুমিই জানো।
+`Debug` programmer-এর জন্য, `Display` user-এর জন্য। এটা derive হয় না, নিজে লিখতে হয়। লিখলে `.to_string()` ফ্রি পাওয়া যায়।
 
 ```rust
 use std::fmt;
@@ -101,21 +62,16 @@ impl fmt::Display for Money {
 fn main() {
     let m = Money { taka: 250 };
     println!("price: {}", m);
-    let text = m.to_string();
-    println!("len: {}", text.len());
 }
 ```
 
 ```text
 price: 250 BDT
-len: 7
 ```
 
-`Display` implement করলে `.to_string()` ফ্রি পাওয়া যায়।
+## `From` আর `Into`
 
-## `From` আর `Into`: type বদলানো
-
-`impl From<A> for B` লিখলে `B::from(a)` চলে, আর বিনা খরচে `a.into()`-ও চলে। `into()`-এর ক্ষেত্রে compiler-কে বলে দিতে হয় ফলাফল কোন type, তাই `let` লাইনে type লিখে দিতে হয়।
+`impl From<A> for B` লিখলে `B::from(a)` চলে, আর `a.into()`-ও ফ্রি। `into()`-তে ফলাফলের type `let` লাইনে লিখে দিতে হয়।
 
 ```rust
 struct Celsius(f64);
@@ -142,12 +98,12 @@ fn main() {
 
 ## `Add`: নিজের type-এ `+`
 
-`a + b` আসলে `a.add(b)`-এর সংক্ষিপ্ত রূপ। `std::ops::Add` implement করলে নিজের type-এও `+` চলে। `Sub`, `Mul`, `Neg` একইভাবে।
+`a + b` আসলে `a.add(b)`। `std::ops::Add` implement করলে নিজের type-এ `+` চলে। `type Output` হলো `+`-এর ফলাফলের type।
 
 ```rust
 use std::ops::Add;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 struct Vec2 {
     x: i32,
     y: i32,
@@ -172,8 +128,6 @@ fn main() {
 Vec2 { x: 11, y: 22 }
 ```
 
-`type Output` লাইনটা কী, তা আগামী কয়েক পাঠের মধ্যে (associated type) পরিষ্কার হবে। আপাতত বুঝে নাও, এটা `+`-এর ফলাফলের type।
-
 ## সাধারণ ভুল
 
 `derive` ছাড়া `{:?}` ব্যবহার করা:
@@ -190,11 +144,11 @@ fn main() {
 }
 ```
 
-compiler নিজেই উপায় বলে দেয়: `add #[derive(Debug)] to Point`। struct-এর ওপরে এক লাইন যোগ করলেই ঠিক।
+struct-এর ওপরে `#[derive(Debug)]` যোগ করলেই ঠিক।
 
 ## নিজে করো
 
-`Temp(i32)` নামে একটা tuple struct বানাও। এতে `Debug`, `Clone`, `Copy`, `PartialEq`, `PartialOrd` derive করো। `Display` implement করো যাতে `Temp(25)` print হলে `25C` দেখায়। তারপর `Temp(25)` আর `Temp(30)` তুলনা করে দেখো কোনটা বড়।
+`Temp(i32)` tuple struct বানাও, `Debug`, `Clone`, `Copy`, `PartialEq`, `PartialOrd` derive করো। `Display` implement করো যাতে `Temp(25)` print হলে `25C` দেখায়। `Temp(25)` আর `Temp(30)` তুলনা করো।
 
 <details>
 <summary>সমাধান দেখো</summary>
@@ -228,7 +182,7 @@ true
 
 ## মনে রাখো
 
-- `#[derive(Debug, Clone, PartialEq, ...)]` এক লাইনে trait দেয়, তবে সব field-এও সেই trait থাকতে হবে।
-- `Debug` হলো `{:?}`, programmer-এর জন্য। `Display` হলো `{}`, user-এর জন্য, আর সেটা নিজে লিখতে হয়।
-- `impl From<A> for B` লিখলে `.into()` ফ্রি পাওয়া যায়।
-- `impl Add` (বা `Sub`, `Mul`) লিখলে নিজের type-এ operator চলে।
+- `#[derive(Debug, Clone, PartialEq, ...)]` এক লাইনে trait দেয়, সব field-এও trait থাকতে হবে।
+- `Debug` হলো `{:?}`, `Display` হলো `{}` আর সেটা নিজে লিখতে হয়।
+- `impl From<A> for B` লিখলে `.into()` ফ্রি।
+- `impl Add` লিখলে নিজের type-এ `+` চলে।

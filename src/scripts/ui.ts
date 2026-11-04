@@ -82,8 +82,50 @@ export function paintStats(s: State = load()) {
   document.querySelectorAll<HTMLButtonElement>('[data-sound]').forEach((b) => (b.textContent = s.sound ? '🔊' : '🔇'));
 }
 
+let lastXp = -1;
+function bumpXp(xp: number) {
+  if (lastXp >= 0 && xp > lastXp) document.querySelectorAll('.pill.xp, .pill.fire').forEach((p) => { p.classList.remove('bump'); void (p as HTMLElement).offsetWidth; p.classList.add('bump'); });
+  lastXp = xp;
+}
+
+function initTheme() {
+  const btns = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
+  const paint = () => btns.forEach((b) => (b.textContent = document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙'));
+  paint();
+  btns.forEach((b) => b.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme !== 'dark';
+    if (dark) document.documentElement.dataset.theme = 'dark';
+    else delete document.documentElement.dataset.theme;
+    try {
+      localStorage.setItem('rb-theme', dark ? 'dark' : 'light');
+      localStorage.setItem('starlight-theme', dark ? 'dark' : 'light'); // docs follow along
+    } catch {}
+    paint();
+  }));
+}
+
+/** Fade + rise elements in as they scroll into view. */
+export function initReveal(scope: ParentNode = document) {
+  const els = [...scope.querySelectorAll<HTMLElement>('.node, .part-head, .stat, .badge, .yt-promo, .prose > h2, .play-cta, .panel')];
+  if (!('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { rootMargin: '0px 0px -40px 0px' });
+  els.forEach((el) => {
+    const group = el.closest('.path, .stats, .badge-grid');
+    const idx = group ? [...group.querySelectorAll(':scope .node, :scope .stat, :scope .badge')].indexOf(el) : 0;
+    el.style.transitionDelay = `${(Math.max(idx, 0) % 8) * 50}ms`;
+    el.classList.add('reveal');
+    io.observe(el);
+  });
+}
+
 export function initChrome() {
   paintStats();
+  bumpXp(load().xp);
+  initTheme();
+  initReveal();
+  window.addEventListener('rb:state', (e) => bumpXp((e as CustomEvent).detail.xp));
   window.addEventListener('rb:state', (e) => paintStats((e as CustomEvent).detail));
   document.querySelectorAll<HTMLButtonElement>('[data-sound]').forEach((b) =>
     b.addEventListener('click', () => { const s = load(); s.sound = !s.sound; save(s); }),

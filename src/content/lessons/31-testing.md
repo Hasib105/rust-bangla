@@ -5,19 +5,16 @@ part: 8
 order: 31
 summary: "`#[test]` function লিখে `cargo test` চালালে Rust তোমার কোড নিজে যাচাই করে দেয়। কোনো আলাদা framework লাগে না।"
 icon: "🧪"
-minutes: 9
+minutes: 5
 ---
 
 ## কেন শিখবো?
 
-কোড বদলালে ভয় লাগে, "অন্য কোথাও কিছু ভেঙে গেল না তো?" হাতে হাতে চালিয়ে দেখা ক্লান্তিকর, আর ভুলও হয়।
-Python বা JS-এ test করতে আলাদা library ঠিক করতে হয়। Rust-এ testing **ভাষার ভেতরেই** আছে, `cargo test` লিখলেই সব test চলে।
-test থাকলে তুমি নির্ভয়ে কোড বদলাতে পারো।
+কোড বদলালে ভয় লাগে, "অন্য কোথাও কিছু ভাঙলো না তো?" Rust-এ testing **ভাষার ভেতরেই** আছে, আলাদা library লাগে না। `cargo test` লিখলেই সব test চলে।
 
 ## প্রথম test
 
-function-এর আগে `#[test]` লিখলে সেটা একটা test হয়ে যায়। test-গুলো সাধারণত একই file-এর নিচে `#[cfg(test)]` দেওয়া একটা `mod tests`-এ রাখা হয়।
-`#[cfg(test)]` মানে "এই অংশ শুধু `cargo test`-এর সময় compile করো", তাই তোমার আসল program ভারী হয় না।
+function-এর আগে `#[test]` দিলে সেটা test। test থাকে `#[cfg(test)]` দেওয়া `mod tests`-এ, যা শুধু `cargo test`-এর সময় compile হয়। `use super::*;` দিয়ে ওপরের কোড আনা হয়। panic না করলে **pass**, `assert` ফেল করলে panic মানে **fail**।
 
 ```rust ignore
 // src/lib.rs
@@ -27,7 +24,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*; // bring add into scope
+    use super::*;
 
     #[test]
     fn adds_two_numbers() {
@@ -36,24 +33,17 @@ mod tests {
 }
 ```
 
-terminal-এ চালাও:
-
 ```bash
 cargo test
 ```
 
-test **pass** করে যদি function panic না করে। কোনো `assert` ফেল করলে panic হয়, আর সেই test **fail** ধরা হয়। প্রতিটা test আলাদা thread-এ চলে, তাই একটা ফেল করলে বাকিগুলো চলতেই থাকে।
+## assert macro
 
-## assert macro-গুলো
-
-তিনটা macro সবচেয়ে বেশি লাগে:
-
-- `assert!(শর্ত)`: শর্ত `true` না হলে panic।
-- `assert_eq!(a, b)`: `a == b` না হলে panic, আর দুটো value-ই দেখিয়ে দেয়।
+- `assert!(শর্ত)`: `true` না হলে panic।
+- `assert_eq!(a, b)`: `a == b` না হলে panic, দুটো মানই দেখায়।
 - `assert_ne!(a, b)`: `a != b` না হলে panic।
 
-শেষে নিজের message-ও দেওয়া যায়। নিচের program-এ সব ঠিক থাকে, তাই কিছু panic করে না।
-এখানে `main`-এ চালিয়ে দেখালাম, আসল test-এ এই লাইনগুলোই `#[test]` function-এর ভেতরে থাকবে।
+আসল test-এ এগুলো `#[test]` function-এর ভেতরে যায়। এখানে `main`-এ চালিয়ে দেখছি।
 
 ```rust
 fn is_even(n: i32) -> bool {
@@ -73,65 +63,30 @@ fn main() {
 all checks passed
 ```
 
-`assert_eq!` ফেল করলে এরকম পরিষ্কার message আসে, যেখানে `left` হলো তোমার পাওয়া মান আর `right` হলো যেটা আশা করেছিলে:
+## `should_panic` আর `Result`
 
-```text
-assertion `left == right` failed
-  left: 4
- right: 5
-```
-
-## Panic আর Result test
-
-কিছু function-এর কাজই হলো ভুল input পেলে panic করা। সেটা test করতে `#[should_panic]` দিতে হয়। test তখনই pass করবে যখন function **সত্যিই panic** করে।
-`expected = "..."` দিলে panic message-এর মধ্যে ওই লেখা আছে কিনা সেটাও মেলানো হয়।
-
-আরেকটা উপায় হলো test function থেকে `Result` return করা। তখন ভেতরে `?` ব্যবহার করা যায়, আর `Err` এলে test fail হয়।
+ভুল input-এ function panic করলে সেটা test করতে `#[should_panic]`। panic **না** হলে test fail। test থেকে `Result` return করলে ভেতরে `?` চলে, `Err` এলে fail।
 
 ```rust ignore
-pub fn divide(a: i32, b: i32) -> i32 {
-    if b == 0 {
-        panic!("divide by zero");
-    }
-    a / b
+#[test]
+#[should_panic(expected = "divide by zero")]
+fn zero_divisor_panics() {
+    divide(1, 0);
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[should_panic(expected = "divide by zero")]
-    fn zero_divisor_panics() {
-        divide(1, 0);
-    }
-
-    #[test]
-    fn parse_works() -> Result<(), std::num::ParseIntError> {
-        let n: i32 = "42".parse()?; // Err here would fail the test
-        assert_eq!(divide(n, 2), 21);
-        Ok(())
-    }
+#[test]
+fn parse_works() -> Result<(), std::num::ParseIntError> {
+    let n: i32 = "42".parse()?;
+    assert_eq!(n, 42);
+    Ok(())
 }
 ```
 
-## Doc test আর tests/ folder
+## `tests/` folder আর doc test
 
-**Doc test:** documentation comment (`///`)-এর ভেতরে ` ``` ` দিয়ে example লিখলে `cargo test` সেটাও compile করে চালায়। তাতে তোমার docs কখনো পুরোনো বা ভুল থাকে না।
-
-**`tests/` folder:** project-এর root-এ `tests/` নামে folder বানালে ওর প্রতিটা file আলাদা test crate হয়। সেখানে তুমি তোমার library শুধু `pub` অংশ দিয়ে ব্যবহার করো, ঠিক বাইরের কেউ যেভাবে করবে। একে বলে **integration test**।
+project root-এর `tests/` folder-এর প্রতিটা file আলাদা crate, যেখানে শুধু `pub` অংশ ব্যবহার করা যায় (**integration test**)। `///` comment-এর ভেতরের ` ``` ` example-ও `cargo test` চালায় (**doc test**)।
 
 ```rust ignore
-// src/lib.rs
-/// Adds two numbers.
-///
-/// ```
-/// assert_eq!(mylib::add(2, 3), 5);
-/// ```
-pub fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
-
 // tests/basic.rs
 #[test]
 fn add_from_outside() {
@@ -139,11 +94,9 @@ fn add_from_outside() {
 }
 ```
 
-`cargo test` একসাথে unit test, integration test আর doc test সবই চালায়। শুধু নির্দিষ্ট test চালাতে নামের একটা অংশ দাও, যেমন `cargo test adds`।
-
 ## সাধারণ ভুল
 
-`assert_eq!` দিয়ে নিজের struct মেলাতে গেলে `PartialEq` আর `Debug` লাগে। না থাকলে compile হয় না:
+নিজের struct `assert_eq!` দিয়ে মেলাতে `PartialEq` (তুলনা) আর `Debug` (ফেল করলে print) লাগে:
 
 ```rust compile_fail
 struct Point {
@@ -158,36 +111,14 @@ fn main() {
 }
 ```
 
-`assert_eq!` ভেতরে `==` চালায় (`PartialEq`), আর ফেল করলে মান print করে (`Debug`)। ঠিক করতে struct-এর ওপরে লেখো `#[derive(Debug, PartialEq)]`।
-
-```rust
-#[derive(Debug, PartialEq)]
-struct Point {
-    x: i32,
-    y: i32,
-}
-
-fn main() {
-    let a = Point { x: 1, y: 2 };
-    let b = Point { x: 1, y: 2 };
-    assert_eq!(a, b);
-    println!("{a:?} equals {b:?}");
-}
-```
-
-```text
-Point { x: 1, y: 2 } equals Point { x: 1, y: 2 }
-```
+ঠিক করতে struct-এর ওপরে `#[derive(Debug, PartialEq)]` লেখো।
 
 ## নিজে করো
 
-`clamp_percent(n: i32) -> i32` নামে একটা function লেখো, যেটা `n` 0-এর কম হলে 0, 100-এর বেশি হলে 100, নয়তো `n`-ই return করে।
-`main`-এ `assert_eq!` দিয়ে তিনটা কেস যাচাই করো, তারপর `ok` print করো। (আসল project-এ এই `assert_eq!`-গুলো `#[test]`-এর ভেতরে যেত।)
+`clamp_percent(n: i32) -> i32` লেখো: `n` 0-এর কম হলে 0, 100-এর বেশি হলে 100, নইলে `n`। `main`-এ `assert_eq!` দিয়ে তিনটা কেস যাচাই করে `ok` print করো।
 
 <details>
 <summary>সমাধান দেখো</summary>
-
-তিনটা কেসই (নিচে, ভেতরে, ওপরে) test করা ভালো অভ্যাস।
 
 ```rust
 fn clamp_percent(n: i32) -> i32 {
@@ -216,8 +147,7 @@ ok
 
 ## মনে রাখো
 
-- `#[test]` দিলে function test হয়, আর `cargo test` সব test চালায়। panic করলে fail, না করলে pass।
-- test সাধারণত `#[cfg(test)] mod tests`-এ থাকে, আর `use super::*;` দিয়ে ওপরের কোড আনা হয়।
-- `assert!`, `assert_eq!`, `assert_ne!` ব্যবহার করো। নিজের type মেলাতে `#[derive(Debug, PartialEq)]` লাগে।
-- `#[should_panic]` panic আশা করে। `Result` return করা test-এ `?` চলে।
-- doc comment-এর example আর `tests/` folder-এর file-ও `cargo test`-এ চলে।
+- `#[test]` দিলে function test, `cargo test` সব চালায়। panic করলে fail।
+- test থাকে `#[cfg(test)] mod tests`-এ, সঙ্গে `use super::*;`।
+- `assert!`, `assert_eq!`, `assert_ne!`। নিজের type-এ `#[derive(Debug, PartialEq)]` লাগে।
+- `#[should_panic]` panic আশা করে। `tests/` folder আর doc comment-এর example-ও চলে।

@@ -5,18 +5,17 @@ part: 3
 order: 11
 summary: "একটা value কয়েকটা রূপের যেকোনো একটা হতে পারে, আর `match` প্রতিটা রূপ সামলাতে বাধ্য করে।"
 icon: "🔀"
-minutes: 9
+minutes: 5
 video: "wVJ2_mt22mg"
 ---
 
 ## কেন শিখবো?
 
-struct বলে "এটাও আছে **এবং** ওটাও আছে"। কিন্তু অনেক সময় ডেটা হয় "এটা **অথবা** ওটা": একটা আকার হয় বৃত্ত, নয়তো আয়তক্ষেত্র। একটা network সংযোগ হয় connected, নয়তো failed।
-C-তে এটা সংখ্যা (`0`, `1`, `2`) দিয়ে সামলাতে হয়, আর কোনো case ভুলে গেলে কেউ ধরে না। Rust-এর **enum** আর **match** দিয়ে compiler নিজেই দেখে নেয় তুমি সব case সামলেছো কি না।
+ডেটা অনেক সময় "এটা **অথবা** ওটা" হয়, যেমন বৃত্ত নয়তো আয়তক্ষেত্র। C-তে সংখ্যা দিয়ে এটা সামলাতে হয়, আর case ভুললে কেউ ধরে না। Rust-এর **enum** আর **match**-এ compiler নিজে দেখে নেয় সব case সামলানো হয়েছে কি না।
 
 ## Enum আর `match`
 
-`enum` এর প্রতিটা সম্ভাব্য রূপকে variant বলে। `match` দিয়ে প্রতিটা variant-এর জন্য আলাদা কাজ লেখা হয়। `match` নিজেও একটা expression, তাই value ফেরত দেয়।
+`enum`-এর প্রতিটা রূপকে variant বলে। `match` প্রতিটা variant-এর জন্য আলাদা কাজ লেখে, আর সে নিজেও একটা expression।
 
 ```rust
 enum Light {
@@ -44,9 +43,9 @@ stop
 go
 ```
 
-## ডেটাসহ variant
+## ডেটাসহ variant আর method
 
-Rust-এর enum-এর বড় শক্তি হলো, প্রতিটা variant নিজের মতো ডেটা বহন করতে পারে। `match`-এর ভেতরে সেই ডেটা নামে বের করে আনা যায়।
+প্রতিটা variant নিজের ডেটা বহন করতে পারে, আর `match`-এর ভেতরে সেটা নামে বের করা যায়। struct-এর মতো enum-এও `impl` চলে।
 
 ```rust
 enum Shape {
@@ -54,55 +53,29 @@ enum Shape {
     Rect { w: f64, h: f64 },
 }
 
-fn main() {
-    let shapes = [Shape::Circle(2.0), Shape::Rect { w: 3.0, h: 4.0 }];
-    for s in &shapes {
-        match s {
-            Shape::Circle(r) => println!("circle, radius {r}"),
-            Shape::Rect { w, h } => println!("rect {w} x {h}"),
-        }
-    }
-}
-```
-
-```text
-circle, radius 2
-rect 3 x 4
-```
-
-## Enum-এর method
-
-struct-এর মতোই enum-এও `impl` দেওয়া যায়। `self`-এর উপর `match` করলে প্রতিটা রূপের জন্য আলাদা হিসাব করা যায়।
-
-```rust
-enum Shape {
-    Circle(f64),
-    Square(f64),
-}
-
 impl Shape {
     fn area(&self) -> f64 {
         match self {
-            Shape::Circle(r) => 3.14 * r * r,
-            Shape::Square(side) => side * side,
+            Shape::Circle(r) => 3.0 * r * r,
+            Shape::Rect { w, h } => w * h,
         }
     }
 }
 
 fn main() {
-    println!("{:.2}", Shape::Circle(2.0).area());
-    println!("{:.2}", Shape::Square(3.0).area());
+    println!("{}", Shape::Circle(2.0).area());
+    println!("{}", Shape::Rect { w: 3.0, h: 4.0 }.area());
 }
 ```
 
 ```text
-12.56
-9.00
+12
+12
 ```
 
 ## `_`, `if let` আর `matches!`
 
-সব variant আলাদা করে লিখতে না চাইলে `_` দিয়ে "বাকি সব" বোঝানো যায়। আর শুধু একটা variant-এ আগ্রহ থাকলে পুরো `match` লেখা ঝামেলা, তখন `if let` বা `matches!` ব্যবহার করো।
+`_` মানে "বাকি সব"। একটা variant নিয়েই আগ্রহ থাকলে `if let`, আর হ্যাঁ/না জানতে `matches!` (এটা `bool` দেয়, `|` দিয়ে একাধিক রূপ মেলে)।
 
 ```rust
 enum Light {
@@ -113,18 +86,15 @@ enum Light {
 
 fn main() {
     let l = Light::Green;
-
     let text = match l {
         Light::Green => "go",
         _ => "wait", // every other variant
     };
     println!("{text}");
 
-    let l2 = Light::Yellow;
-    if let Light::Yellow = l2 {
+    if let Light::Yellow = Light::Yellow {
         println!("careful");
     }
-
     println!("{}", matches!(Light::Red, Light::Red | Light::Yellow));
 }
 ```
@@ -134,9 +104,6 @@ go
 careful
 true
 ```
-
-`matches!` একটা `bool` দেয়, আর `|` দিয়ে একাধিক রূপ মেলানো যায়। `if let` দিয়ে ডেটাও বের করা যায়, যেমন `if let Shape::Circle(r) = s { ... }`।
-তবে `_` দিলে compiler আর বলবে না যে নতুন variant যোগ হয়েছে। তাই সম্ভব হলে সব variant লেখাই নিরাপদ।
 
 ## সাধারণ ভুল
 
@@ -159,17 +126,16 @@ fn main() {
 }
 ```
 
-`match`-কে সব রূপ সামলাতে হয় (exhaustive)। compiler ঠিক বলে দেয় কোনটা বাদ পড়েছে। এটাই enum-এর সবচেয়ে বড় সুবিধা: পরে নতুন variant যোগ করলে যেসব `match` আপডেট করতে হবে, compiler সবগুলো দেখিয়ে দেবে।
+`match`-কে সব variant সামলাতে হয় (exhaustive)। বাদ পড়া variant যোগ করো, অথবা `_` দাও।
 
 ## নিজে করো
 
-`Coin` নামে একটা enum বানাও যার variant `Penny`, `Nickel`, `Dime`, `Quarter`। একটা function `cents(c: Coin) -> u32` লেখো যা যথাক্রমে `1`, `5`, `10`, `25` ফেরত দেবে।
-`main`-এ `Dime` আর `Quarter`-এর মান যোগ করে print করো।
+`Coin` enum বানাও (`Penny`, `Nickel`, `Dime`, `Quarter`) আর `cents(c: Coin) -> u32` লেখো, যা `1`, `5`, `10`, `25` দেবে। `Dime` আর `Quarter`-এর যোগফল print করো।
 
 <details>
 <summary>সমাধান দেখো</summary>
 
-`match` একটা expression, তাই সরাসরি function-এর শেষ লাইনে বসিয়ে দিলেই value return হয়ে যায়।
+`match` একটা expression, তাই function-এর শেষ লাইনে বসালেই value return হয়।
 
 ```rust
 enum Coin {
@@ -202,7 +168,7 @@ total = 35
 
 ## মনে রাখো
 
-- `enum` মানে "এই কয়েকটার যেকোনো একটা"। প্রতিটা variant নিজের ডেটা বহন করতে পারে।
-- `match` সব variant সামলাতে বাধ্য করে। কিছু বাদ গেলে compile হয় না।
-- বাকি সবের জন্য `_`। একটা variant-এ আগ্রহ থাকলে `if let`, আর হ্যাঁ/না জানতে `matches!`।
-- struct-এর মতোই enum-এ `impl` দিয়ে method লেখা যায়।
+- `enum` মানে "এই কয়েকটার যেকোনো একটা", আর variant ডেটা বহন করতে পারে।
+- `match` সব variant সামলাতে বাধ্য করে, নইলে compile হয় না।
+- বাকি সবের জন্য `_`, একটার জন্য `if let`, হ্যাঁ/না-র জন্য `matches!`।
+- enum-এও `impl` দিয়ে method লেখা যায়।

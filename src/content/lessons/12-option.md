@@ -5,24 +5,16 @@ part: 3
 order: 12
 summary: "Rust-এ null নেই। value থাকতেও পারে, নাও পারে, এটা `Option<T>` দিয়ে type-এ লেখা হয়।"
 icon: "📦"
-minutes: 9
+minutes: 6
 ---
 
 ## কেন শিখবো?
 
-অনেক ভাষায় `null` আছে: Java-তে `NullPointerException`, JS-এ `undefined is not a function`। null-এর আবিষ্কর্তা নিজেই একে "billion dollar mistake" বলেছেন। সমস্যা হলো, null-টা type দেখে বোঝা যায় না, আর চেক করতে ভুলে গেলে program চলতে চলতে হঠাৎ crash করে।
-Rust-এ null নেই। বদলে আছে একটা সাধারণ enum, `Option<T>`। value না থাকার সম্ভাবনাটা type-এই লেখা থাকে, আর compiler তোমাকে সেটা সামলাতে বাধ্য করে।
+`null` নিয়ে Java-র `NullPointerException` বা JS-এর `undefined` crash সবাই চেনে। Rust-এ null নেই। value না থাকার সম্ভাবনা type-এই লেখা থাকে (`Option<T>`), আর compiler সেটা সামলাতে বাধ্য করে।
 
 ## `Option<T>`: Some অথবা None
 
-```rust ignore
-enum Option<T> {
-    Some(T), // there is a value
-    None,    // there is nothing
-}
-```
-
-এটা std-এর ভেতরেই আছে, আলাদা করে import করতে হয় না। যে function ব্যর্থ হতে পারে, সে `Option` ফেরত দেয়।
+`Option` একটা সাধারণ enum: `Some(value)` মানে আছে, `None` মানে নেই। যে function ব্যর্থ হতে পারে, সে `Option` ফেরত দেয়। `Option<i32>` আর `i32` আলাদা type।
 
 ```rust
 fn divide(a: i32, b: i32) -> Option<i32> {
@@ -49,21 +41,13 @@ None
 result = 3
 ```
 
-`Option<i32>` আর `i32` সম্পূর্ণ আলাদা type। তাই `Some(5)`-কে সরাসরি সংখ্যা হিসেবে ব্যবহার করা যায় না। আগে ভেতরের value বের করতে হয়, আর সেই সময়েই তোমাকে `None`-এর কথা ভাবতে হয়।
+## `unwrap_or` আর `map`
 
-## বের করার সহজ উপায়: `unwrap_or`, `map`
-
-প্রতিবার `match` লেখা লম্বা হয়। ছোট কাজের জন্য কয়েকটা method আছে:
-
-- `unwrap_or(default)`: `Some` হলে ভেতরের value, `None` হলে default।
-- `map(f)`: `Some`-এর ভেতরে `f` চালায়, `None` হলে `None`-ই থাকে।
-
-`|n| n * 2` হলো একটা ছোট নামহীন function (closure), এটা নিয়ে পরে আলাদা পাঠ আছে। এখন শুধু "n নাও, n * 2 ফেরত দাও" পড়ে নাও।
+`unwrap_or(default)` `None` হলে default দেয়। `map(f)` `Some`-এর ভেতরে `f` চালায়, `None` থাকলে `None`-ই থাকে। `|n| n * 2` মানে "n নাও, n * 2 দাও" (closure, পরে আসছে)। `.get(i)` বাইরের index-এ panic না করে `None` দেয়।
 
 ```rust
 fn main() {
     let nums = [10, 20, 30];
-
     println!("{}", nums.get(1).unwrap_or(&0));
     println!("{}", nums.get(9).unwrap_or(&0));
     println!("{:?}", nums.get(1).map(|n| n * 2));
@@ -78,11 +62,9 @@ Some(40)
 None
 ```
 
-`.get(i)` index ঠিক থাকলে `Some(&value)`, বাইরে হলে `None` দেয়। `nums[9]` লিখলে panic হতো, কিন্তু `get` নিরাপদ।
+## `and_then`: চেইন
 
-## `and_then`: Option-এর চেইন
-
-একটা ধাপ নিজেই `Option` দিলে `map` ব্যবহার করলে `Option<Option<..>>` হয়ে যায়। তখন `and_then` লাগে। যেকোনো ধাপে `None` এলে বাকি সব ধাপ বাদ যায়।
+একটা ধাপ নিজেই `Option` দিলে `and_then` লাগে। কোনো ধাপে `None` এলে বাকি ধাপ বাদ যায়।
 
 ```rust
 fn half(n: i32) -> Option<i32> {
@@ -100,11 +82,9 @@ Some(2)
 None
 ```
 
-প্রথমটায় `8 -> 4 -> 2`। দ্বিতীয়টায় `6 -> 3`, আর `3` বিজোড় বলে `half(3)` `None` দেয়।
+## `let else` আর `?`
 
-## `if let`, `let else` আর `?`
-
-একটা variant-এ আগ্রহ থাকলে `if let` সুবিধাজনক। আর "value না থাকলে এখনই বেরিয়ে যাও" ধরনের কাজে আছে `let else`: মিললে variable পাওয়া যায়, না মিললে `else` ব্লককে বেরিয়ে যেতে হয় (`return`, `break` ইত্যাদি)।
+`let Some(n) = v else { ... }`: মিললে `n` পাওয়া যায়, না মিললে `else` ব্লককে `return` করতে হয়। আর `Option` ফেরত দেওয়া function-এ `?` লিখলে `Some` হলে value খুলে আসে, `None` হলে function সেখানেই `None` ফেরত দেয়।
 
 ```rust
 fn show(v: Option<i32>) {
@@ -115,36 +95,22 @@ fn show(v: Option<i32>) {
     println!("got {n}");
 }
 
-fn main() {
-    if let Some(c) = "rust".chars().next() {
-        println!("first letter: {c}");
-    }
-    show(Some(7));
-    show(None);
-}
-```
-
-```text
-first letter: r
-got 7
-nothing to show
-```
-
-আর `Option` ফেরত দেওয়া function-এর ভেতরে `?` লিখলে `Some` হলে value খুলে আসে, `None` হলে function সেখানেই `None` ফেরত দিয়ে শেষ হয়।
-
-```rust
 fn initial_upper(name: &str) -> Option<char> {
     let c = name.chars().next()?; // empty text: return None here
     Some(c.to_ascii_uppercase())
 }
 
 fn main() {
+    show(Some(7));
+    show(None);
     println!("{:?}", initial_upper("rust"));
     println!("{:?}", initial_upper(""));
 }
 ```
 
 ```text
+got 7
+nothing to show
 Some('R')
 None
 ```
@@ -161,18 +127,16 @@ fn main() {
 }
 ```
 
-compiler বলছে `Option<i32>` আর সংখ্যা যোগ করা যায় না। আগে `match`, `unwrap_or` বা `if let` দিয়ে ভেতরের value বের করো, যেমন `x.unwrap_or(0) + 1`।
-`.unwrap()` নামে একটা method আছে যা `None` পেলে **panic** করে program থামিয়ে দেয়। তাড়াহুড়ো বা পরীক্ষার কোড ছাড়া এটা এড়িয়ে চলো।
+আগে ভেতরের value বের করো, যেমন `x.unwrap_or(0) + 1`। `.unwrap()` `None`-এ **panic** করে, তাই এড়িয়ে চলো।
 
 ## নিজে করো
 
-`find_even(nums: &[i32]) -> Option<i32>` লেখো, যা slice-এর প্রথম জোড় সংখ্যা `Some`-এ দেবে, না পেলে `None`। 
-`main`-এ `[3, 5, 8, 9]` আর `[1, 3]` দিয়ে চালাও। প্রথমটা `if let` দিয়ে, দ্বিতীয়টা `unwrap_or(-1)` দিয়ে print করো।
+`find_even(nums: &[i32]) -> Option<i32>` লেখো, যা প্রথম জোড় সংখ্যা `Some`-এ দেয়, না পেলে `None`। `[3, 5, 8, 9]` আর `[1, 3]` দিয়ে চালাও।
 
 <details>
 <summary>সমাধান দেখো</summary>
 
-loop-এর ভেতরে জোড় সংখ্যা পেলেই `return Some(n)`। loop শেষ হয়ে গেলে কিছু পাওয়া যায়নি, তাই `None`।
+জোড় সংখ্যা পেলেই `return Some(n)`, loop শেষ হলে `None`।
 
 ```rust
 fn find_even(nums: &[i32]) -> Option<i32> {
@@ -201,7 +165,7 @@ found 8
 
 ## মনে রাখো
 
-- Rust-এ null নেই। value থাকতে বা না থাকতে পারলে type হয় `Option<T>`, যার রূপ `Some(v)` বা `None`।
-- `Option<T>` আর `T` আলাদা type, তাই `None`-এর কথা ভুলে যাওয়ার উপায় নেই।
-- ছোট কাজে `unwrap_or`, `map`, `and_then`। একটা রূপ দেখতে `if let`, না পেলে বের হতে `let else`।
-- `?` চালালে `None` সঙ্গে সঙ্গে function থেকে ফেরত যায়। `unwrap()` `None`-এ panic করে, তাই এড়িয়ে চলো।
+- Rust-এ null নেই। value থাকতে বা না থাকতে পারলে type `Option<T>`: `Some(v)` বা `None`।
+- `Option<T>` আর `T` আলাদা type, তাই `None` ভুলে যাওয়ার উপায় নেই।
+- ছোট কাজে `unwrap_or`, `map`, `and_then`। না পেলে বের হতে `let else`।
+- `?` `None`-কে সঙ্গে সঙ্গে ফেরত দেয়। `unwrap()` `None`-এ panic করে।

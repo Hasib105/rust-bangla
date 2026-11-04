@@ -5,17 +5,16 @@ part: 8
 order: 29
 summary: "pattern দিয়ে struct, tuple, enum, slice ভেঙে ভেতরের অংশ সরাসরি variable-এ নেওয়া যায়, শর্ত আর range-সহ।"
 icon: "🧩"
-minutes: 9
+minutes: 5
 ---
 
 ## কেন শিখবো?
 
-অন্য ভাষায় একটা object-এর ভেতরের অংশ পেতে লিখতে হয় `p.x`, `p.y`, `arr[0]`, `arr[len-1]`, আর তার আগে আলাদা `if` দিয়ে দেখতে হয় এটা কোন ধরনের ডেটা।
-Rust-এ **pattern** একসঙ্গে দুটো কাজ করে: ডেটার আকার মিলিয়ে দেখে, আর মিললে ভেতরের অংশগুলো variable-এ তুলে আনে। `match` তুমি আগেই দেখেছো। এখানে দেখবো pattern নিজে কতটা শক্তিশালী।
+অন্য ভাষায় ভেতরের অংশ পেতে `p.x`, `arr[0]` লিখে আলাদা `if` দিয়ে ধরন দেখতে হয়। Rust-এর **pattern** একসঙ্গে আকার মেলায় আর ভেতরের অংশ variable-এ তোলে।
 
-## Destructuring: ভেঙে নেওয়া
+## Destructuring আর slice
 
-pattern শুধু `match`-এ নয়, `let`-এও চলে। tuple আর struct এভাবে ভাঙা যায়। struct-এ field-এর নামে variable বানানো হয়, আর `..` দিয়ে বাকিগুলো বাদ দেওয়া হয়।
+`let`-এও pattern চলে। `..` বাকি অংশ বাদ দেয়। slice-এ `[first, .., last]` শুরু-শেষ ধরে, আর `rest @ ..` মাঝেরগুলো একটা slice হিসেবে নেয়।
 
 ```rust
 struct Point {
@@ -26,22 +25,26 @@ struct Point {
 
 fn main() {
     let (a, b) = (1, "two");
-    println!("{a} {b}");
+    let Point { x, y, .. } = Point { x: 3, y: -4, z: 9 };
+    println!("{a} {b} {x} {y}");
 
-    let p = Point { x: 3, y: -4, z: 9 };
-    let Point { x, y, .. } = p; // ignore z
-    println!("x = {x}, y = {y}");
+    if let [head, rest @ ..] = [10, 20, 30].as_slice() {
+        println!("head {head}, rest {rest:?}");
+    }
+    let [first, .., last] = [1, 2, 3, 4];
+    println!("{first} {last}");
 }
 ```
 
 ```text
-1 two
-x = 3, y = -4
+1 two 3 -4
+head 10, rest [20, 30]
+1 4
 ```
 
-## enum-এর ভেতরের ডেটা আর guard
+## enum আর guard
 
-enum-এর variant-এর ভেতরের ডেটা pattern দিয়ে তুলে আনা যায়। `if` যোগ করলে এটাকে বলে **match guard**: pattern মিললেও শর্ত মিলতে হবে। আর `x @ pattern` দিয়ে মিলে যাওয়া মানটাকে একটা নাম দেওয়া যায়।
+enum-এর ভেতরের ডেটা pattern দিয়ে তোলা যায়। `if` যোগ করলে **match guard**: pattern মিললেও শর্ত মিলতে হবে।
 
 ```rust
 enum Shape {
@@ -60,7 +63,6 @@ fn describe(s: &Shape) -> String {
 
 fn main() {
     println!("{}", describe(&Shape::Circle(12.0)));
-    println!("{}", describe(&Shape::Circle(2.5)));
     println!("{}", describe(&Shape::Rect { w: 4.0, h: 4.0 }));
     println!("{}", describe(&Shape::Rect { w: 2.0, h: 3.0 }));
 }
@@ -68,14 +70,13 @@ fn main() {
 
 ```text
 big circle 12
-circle 2.5
 square 4
 rect 2x3
 ```
 
-## Range আর `@`
+## Range, `|` আর `@`
 
-সংখ্যা বা char-এর জন্য `1..=5` লেখা যায় (শেষ সংখ্যা সহ)। `|` দিয়ে একাধিক pattern জোড়া যায়। `@` দিয়ে range-এর মধ্যে মিললে সেই মানটা নামে পাওয়া যায়।
+`1..=9` শেষ সংখ্যা সহ range। `|` একাধিক pattern জোড়ে। `small @ 1..=9` মিলে যাওয়া মানটা নাম দেয়।
 
 ```rust
 fn classify(n: u32) -> String {
@@ -88,7 +89,6 @@ fn classify(n: u32) -> String {
 }
 
 fn main() {
-    println!("{}", classify(0));
     println!("{}", classify(7));
     println!("{}", classify(20));
     println!("{}", classify(99));
@@ -96,46 +96,14 @@ fn main() {
 ```
 
 ```text
-zero
 small 7
 round
 other
 ```
 
-## Slice pattern
+## `let else`
 
-array বা slice-এর শুরু আর শেষ একসঙ্গে ধরা যায়। `..` মাঝের সব বাদ দেয়, আর `rest @ ..` মাঝেরগুলোকে একটা slice হিসেবে নামে ধরে।
-
-```rust
-fn show(v: &[i32]) {
-    match v {
-        [] => println!("empty"),
-        [one] => println!("one: {one}"),
-        [first, .., last] => println!("first {first}, last {last}"),
-    }
-}
-
-fn main() {
-    show(&[]);
-    show(&[5]);
-    show(&[1, 2, 3, 4]);
-
-    if let [head, rest @ ..] = [10, 20, 30].as_slice() {
-        println!("head {head}, rest {rest:?}");
-    }
-}
-```
-
-```text
-empty
-one: 5
-first 1, last 4
-head 10, rest [20, 30]
-```
-
-## `let else`: না মিললে বেরিয়ে যাও
-
-`if let` মিললে একটা block চালায়। কিন্তু অনেক সময় "মিললে এগোও, না মিললে সঙ্গে সঙ্গে return করো" চাই। `let ... else` ঠিক এটাই করে, আর variable-টা পরের সব লাইনে পাওয়া যায়, নিচের দিকে একটা বাড়তি indentation ছাড়াই। `else` block-কে অবশ্যই বেরিয়ে যেতে হবে (`return`, `break`, `panic!`)।
+"মিললে এগোও, না মিললে বেরিয়ে যাও" হলে `let ... else`। `else` block-কে অবশ্যই বেরোতে হয় (`return`, `break`, `panic!`)। variable পরের সব লাইনে পাওয়া যায়।
 
 ```rust
 fn double_first(words: &[&str]) -> i32 {
@@ -163,7 +131,7 @@ fn main() {
 
 ## সাধারণ ভুল
 
-সব সম্ভাবনা না ঢেকে `match` লেখা। compiler বলে দেয় কোনটা বাদ পড়েছে:
+সব সম্ভাবনা না ঢেকে `match` লেখা:
 
 ```rust compile_fail
 fn main() {
@@ -176,32 +144,14 @@ fn main() {
 }
 ```
 
-শেষে `_ => ...` যোগ করলেই বাকি সব ধরা পড়ে:
-
-```rust
-fn main() {
-    let n: u8 = 7;
-    let s = match n {
-        0 => "zero",
-        1..=9 => "small",
-        _ => "big",
-    };
-    println!("{s}");
-}
-```
-
-```text
-small
-```
+শেষে `_ => "big"` যোগ করলেই ঠিক।
 
 ## নিজে করো
 
-একটা function `kind(t: (i32, i32)) -> &'static str` লেখো। tuple-এর দুই মান `(x, y)` হলে: দুটোই `0` হলে `"origin"`, শুধু `y` শূন্য হলে `"on x axis"`, শুধু `x` শূন্য হলে `"on y axis"`, বাকি সব হলে `"elsewhere"`। `(0, 0)`, `(3, 0)`, `(0, 5)`, `(1, 1)` দিয়ে পরীক্ষা করো।
+`kind(t: (i32, i32)) -> &'static str` লেখো: দুটোই `0` হলে `"origin"`, শুধু `y` শূন্য হলে `"on x axis"`, শুধু `x` শূন্য হলে `"on y axis"`, নাহলে `"elsewhere"`। `(0, 0)`, `(3, 0)`, `(0, 5)`, `(1, 1)` দিয়ে পরীক্ষা করো।
 
 <details>
 <summary>সমাধান দেখো</summary>
-
-`match` একটা tuple-কে সরাসরি ভেঙে দেখতে পারে। `0` literal pattern, আর `_` যেকোনো মান।
 
 ```rust
 fn kind(t: (i32, i32)) -> &'static str {
@@ -232,8 +182,7 @@ elsewhere
 
 ## মনে রাখো
 
-- pattern ডেটার আকার মেলায় আর ভেতরের অংশ variable-এ তোলে। `let`, `match`, `if let`, function parameter, সব জায়গায় চলে।
-- `..` বাকি field বা element বাদ দেয়, `|` একাধিক pattern জোড়ে, `1..=5` range ধরে।
-- guard (`if ...`) pattern-এর ওপর বাড়তি শর্ত বসায়, আর `name @ pattern` মান ধরে রাখে।
+- pattern আকার মেলায় আর অংশ variable-এ তোলে: `let`, `match`, `if let` সব জায়গায়।
+- `..` বাদ দেয়, `|` জোড়ে, `1..=5` range, `n @ pattern` মান ধরে, guard (`if`) বাড়তি শর্ত দেয়।
 - slice pattern: `[first, .., last]`, `[head, rest @ ..]`।
-- `let Some(x) = ... else { return ... };` মিললে এগোও, না মিললে বেরিয়ে যাও।
+- `let Some(x) = ... else { return ... };` মিললে এগোও, নাহলে বেরোও।

@@ -5,57 +5,34 @@ part: 1
 order: 1
 summary: "Rust কেন C-এর মতো দ্রুত অথচ নিরাপদ, আর rustup ও cargo দিয়ে প্রথম project চালানোর পদ্ধতি।"
 icon: "🚀"
-minutes: 8
+minutes: 5
 ---
 
 ## কেন শিখবো?
 
-C আর C++ খুব দ্রুত, কিন্তু memory নিয়ে ভুল করলে program crash করে বা security hole তৈরি হয়।
-Python, Java বা Go নিরাপদ, কিন্তু তাদের garbage collector (GC) পেছনে চলতে থাকে, তাই সময় আর RAM বেশি লাগে।
+C আর C++ দ্রুত, কিন্তু memory ভুলে crash আর security hole হয়। Python বা Java নিরাপদ, কিন্তু garbage collector (GC) সময় আর RAM খায়।
+Rust দেয় C-এর গতি আর memory safety, **GC ছাড়াই**। compiler আগেই কোড পরীক্ষা করে।
 
-Rust দুটোই দেয়: C-এর মতো গতি, আবার memory safety, **আর GC ছাড়াই**।
-কীভাবে? compiler আগেই কোড পরীক্ষা করে। ভুল থাকলে program চালাতেই দেয় না। এই কারণে Rust-এর compiler শুরুতে একটু কড়া মনে হয়, কিন্তু পরে সেটাই বন্ধু হয়ে যায়।
+## Install: rustup
 
-## Rust কোথায় ব্যবহার হয়?
-
-- **Operating system ও browser:** Linux kernel-এ Rust ব্যবহার হচ্ছে, Firefox-এর অনেক অংশ Rust-এ লেখা।
-- **Cloud ও network:** Cloudflare, AWS আর Discord-এর মতো কোম্পানি দ্রুত ও নিরাপদ service বানাতে Rust নেয়।
-- **CLI tool:** `ripgrep`, `bat`, `fd`-এর মতো জনপ্রিয় command-line tool।
-- **WebAssembly, embedded, game, blockchain:** যেখানে গতি আর নির্ভরযোগ্যতা দুটোই দরকার।
-
-Stack Overflow survey-তে Rust বছরের পর বছর "সবচেয়ে প্রিয় language"-এর তালিকায় ওপরে থাকে।
-
-## Install করা: rustup
-
-Rust install করার সরকারি টুলের নাম **rustup**। এটা compiler (`rustc`), build tool (`cargo`) আর আপডেট সব একসাথে সামলায়।
-
-Linux বা macOS-এ terminal-এ এই একটা command চালাও:
+Rust install করার সরকারি টুল **rustup**। এটা compiler (`rustc`), `cargo` আর update সামলায়। Windows-এ [rustup.rs](https://rustup.rs) থেকে installer নামাও।
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-Windows-এ [rustup.rs](https://rustup.rs) থেকে `rustup-init.exe` নামিয়ে চালাও। তখন Visual Studio C++ Build Tools লাগতে পারে, installer সেটা বলে দেবে।
-
-install শেষে নতুন terminal খুলে version দেখো:
-
-```bash
 rustc --version
 cargo --version
 ```
 
-দুটো command-ই একটা version নম্বর দেখালে সব ঠিক আছে। পরে নতুন version এলে `rustup update` চালালেই হয়।
+নতুন terminal খুলে দুটো version দেখালে সব ঠিক। পরে `rustup update` দিয়ে update করো।
 
 ## প্রথম project: cargo new
 
-`rustc` দিয়ে একটা ফাইল compile করা যায়, কিন্তু বাস্তবে সবাই **cargo** ব্যবহার করে। cargo project বানায়, compile করে, চালায়, আর বাইরের library-ও আনে।
+বাস্তবে সবাই **cargo** ব্যবহার করে। এটা project বানায়, compile করে, চালায়।
 
 ```bash
 cargo new hello
 cd hello
 ```
-
-`cargo new hello` এই ফোল্ডার বানায়:
 
 ```text
 hello/
@@ -64,16 +41,7 @@ hello/
     └── main.rs
 ```
 
-`Cargo.toml` হলো project-এর পরিচয়পত্র:
-
-```toml
-[package]
-name = "hello"
-version = "0.1.0"
-edition = "2024"
-```
-
-`edition` বলে Rust-এর কোন সংস্করণের নিয়ম চলবে। আর `src/main.rs`-এ cargo আগে থেকেই একটা কাজের program লিখে দেয়:
+`Cargo.toml` হলো project-এর পরিচয়পত্র (নাম, version, edition)। আর কোড থাকে `src/main.rs`-এ:
 
 ```rust
 fn main() {
@@ -85,21 +53,11 @@ fn main() {
 Hello, world!
 ```
 
-`main` হলো program-এর শুরু। এটা কীভাবে কাজ করে, পরের পাঠে দেখবো।
+## cargo-র তিনটা command
 
-## cargo-র তিনটা প্রধান command
-
-```bash
-cargo run
-cargo check
-cargo build --release
-```
-
-- `cargo run`: compile করে সঙ্গে সঙ্গে চালায়। প্রতিদিনের কাজ এটাই।
-- `cargo check`: শুধু ভুল আছে কিনা দেখে, binary বানায় না। তাই অনেক দ্রুত।
-- `cargo build --release`: পুরো optimization সহ বানায়। ফলাফল থাকে `target/release/hello`-তে। শুধু `cargo run` করলে debug build হয়, যেটা compile-এ দ্রুত কিন্তু চালাতে ধীর।
-
-`target/` ফোল্ডারে সব বানানো ফাইল জমে। এটা git-এ রাখার দরকার নেই, `cargo new` আগেই `.gitignore` বানিয়ে সেটা বাদ দিয়ে দেয়।
+- `cargo run`: compile করে চালায়। প্রতিদিনের কাজ।
+- `cargo check`: শুধু ভুল দেখে, binary বানায় না। তাই অনেক দ্রুত।
+- `cargo build --release`: পুরো optimization সহ বানায়। ফলাফল `target/release/`-এ।
 
 ## সাধারণ ভুল
 
@@ -109,11 +67,11 @@ project ফোল্ডারের **বাইরে** `cargo run` চালা
 error: could not find `Cargo.toml` in `/home/you` or any parent directory
 ```
 
-cargo `Cargo.toml` খুঁজে পায়নি, কারণ তুমি ভুল ফোল্ডারে আছো। `cd hello` করে project-এর ভেতরে ঢুকলেই ঠিক হয়ে যায়।
+`cd hello` করে project-এর ভেতরে ঢুকলেই ঠিক।
 
 ## নিজে করো
 
-`greet` নামে একটা নতুন project বানাও, `src/main.rs`-এর লেখা বদলে `Hello, Rust!` print করাও, তারপর `cargo run` চালাও।
+`greet` নামে নতুন project বানাও, `Hello, Rust!` print করাও, তারপর `cargo run` চালাও।
 
 <details>
 <summary>সমাধান দেখো</summary>
@@ -123,7 +81,7 @@ cargo new greet
 cd greet
 ```
 
-`src/main.rs` ফাইলটা এমন হবে:
+`src/main.rs`:
 
 ```rust
 fn main() {
@@ -135,14 +93,11 @@ fn main() {
 Hello, Rust!
 ```
 
-তারপর `cargo run` চালালেই terminal-এ এই লেখা আসবে।
-
 </details>
 
 ## মনে রাখো
 
-- Rust দেয় C-এর গতি আর memory safety, কিন্তু GC ছাড়া।
-- `rustup` দিয়ে Rust install আর update হয়।
-- `cargo new` নতুন project বানায়, `cargo run` চালায়, `cargo check` দ্রুত ভুল ধরে।
-- release-এর জন্য `cargo build --release`, ফলাফল `target/release/`-এ।
-- `Cargo.toml` project-এর তথ্য রাখে, আর কোড থাকে `src/main.rs`-এ।
+- Rust দেয় C-এর গতি আর memory safety, GC ছাড়া।
+- `rustup` দিয়ে install ও update হয়।
+- `cargo new` বানায়, `cargo run` চালায়, `cargo check` দ্রুত ভুল ধরে।
+- release build যায় `target/release/`-এ।

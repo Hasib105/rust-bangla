@@ -39,6 +39,12 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
       </div>
     </header>
 
+    <div class="modes">
+      <a class="mode" href="#read"><span class="ic">📖</span><span>পড়ো<br /><small>পুরো পাঠ, কোড চালিয়ে দেখো</small></span></a>
+      <button class="mode play" data-start="play"><span class="ic">🎮</span><span>খেলো<br /><small>ছোট কার্ড + মাঝে মাঝে প্রশ্ন</small></span></button>
+      <button class="mode" data-start="quiz"><span class="ic">⚡</span><span>শুধু কুইজ<br /><small>জানো? সরাসরি {bnN(cards.length)}টা প্রশ্ন</small></span></button>
+    </div>
+
     {lesson.video && (
       <div class="yt" data-yt={lesson.video} role="button" tabindex="0" aria-label="ভিডিও চালাও">
         <img src={`https://i.ytimg.com/vi/${lesson.video}/hqdefault.jpg`} alt={`${lesson.title}: ভিডিও`} loading="lazy" />
@@ -46,14 +52,17 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
       </div>
     )}
 
-    <div class="prose">
+    <div class="prose" id="read">
       <Content />
     </div>
 
     <section class="play-cta">
       <h2>🎮 এবার খেলার পালা!</h2>
       <p>{bnN(cards.length)}টা প্রশ্ন। প্রথমবারেই ঠিক করলে প্রতিটায় ১০ XP। ভুল করা প্রশ্ন শেষে আবার আসবে।</p>
-      <button class="btn" id="play">কুইজ শুরু করো →</button>
+      <div class="row">
+        <button class="btn" data-start="quiz">⚡ কুইজ শুরু করো</button>
+        <button class="btn ghost" data-start="play">🎮 কার্ড দিয়ে খেলো</button>
+      </div>
     </section>
 
     <nav class="pager">
@@ -85,6 +94,17 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
   import { confetti, sound, announceBadges, toast } from '../../scripts/ui';
   import { initRunners } from '../../scripts/runner';
 
+  // Snapshot the lesson sections (before Run buttons are added) for Play mode's learn cards.
+  const sections: { title: string; html: string }[] = [];
+  {
+    let cur: { title: string; nodes: Node[] } | null = null;
+    const flush = () => { if (cur && cur.nodes.length) sections.push({ title: cur.title, html: cur.nodes.map((n) => (n as Element).outerHTML ?? n.textContent).join('') }); };
+    for (const el of [...document.getElementById('read')!.children]) {
+      if (el.tagName === 'H2') { flush(); cur = { title: el.textContent || '', nodes: [] }; }
+      else if (cur) cur.nodes.push(el);
+    }
+    flush();
+  }
   initRunners();
 
   // lazy YouTube
@@ -105,11 +125,30 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
     document.body.style.overflow = '';
   }
 
-  function start() {
+  /** Play: learn cards from the lesson sections with the quiz questions spread between them. */
+  function playDeck() {
+    const learn = sections.filter((x) => !/নিজে করো/.test(x.title)).map((x) => ({ type: 'learn', explain: '', q: '', ...x }));
+    const qs = [...data.cards];
+    const boss = qs.pop();
+    const deck: any[] = [];
+    learn.forEach((l, k) => {
+      deck.push(l);
+      const take = Math.round(((k + 1) * qs.length) / learn.length) - Math.round((k * qs.length) / learn.length);
+      deck.push(...qs.splice(0, take));
+    });
+    deck.push(...qs);
+    if (boss) deck.push(boss);
+    return deck;
+  }
+
+  let lastMode = 'quiz';
+  function start(mode: string = lastMode) {
+    lastMode = mode;
     layer.hidden = false;
     document.body.style.overflow = 'hidden';
-    runQuiz(layer, data.cards, {
+    runQuiz(layer, mode === 'play' ? playDeck() : data.cards, {
       requeue: true,
+      onLearn: (el) => initRunners(el),
       onClose: () => { if (confirm('কুইজ ছেড়ে যাবে? অগ্রগতি সেভ হবে না।')) close(); },
       onFinish: ({ firstTry, total, missed }) => {
         const s = load();
@@ -150,12 +189,13 @@ const lastOfPart = partLessons[partLessons.length - 1].slug === lesson.slug;
             </div>
           </div></div>`;
         layer.scrollTop = 0;
-        document.getElementById('again')!.onclick = start;
+        document.getElementById('again')!.onclick = () => start();
         document.getElementById('done-chip')!.hidden = false;
         if (xp > 0) toast(`⚡ +${bn(xp)} XP`, 'চালিয়ে যাও!');
       },
     });
   }
-  document.getElementById('play')!.addEventListener('click', start);
-  if (location.hash === '#play') start();
+  document.querySelectorAll<HTMLElement>('[data-start]').forEach((b) => b.addEventListener('click', () => start(b.dataset.start)));
+  if (location.hash === '#play') start('play');
+  if (location.hash === '#quiz') start('quiz');
 </script>

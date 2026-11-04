@@ -2,7 +2,9 @@ import { bn } from './store';
 import { sound } from './ui';
 
 export interface Card {
-  type: 'choice' | 'truefalse' | 'order' | 'fill' | 'line';
+  type: 'choice' | 'truefalse' | 'order' | 'fill' | 'line' | 'learn';
+  title?: string; // learn cards
+  html?: string; // learn cards
   q: string;
   codeHtml?: string;
   options?: string[];
@@ -24,9 +26,12 @@ const norm = (s: string) => s.replace(/\s+/g, '').replace(/;$/, '');
  * Runs a quiz inside `root`.
  * requeue: a wrong card comes back at the end (lesson mode). Without it, each card is asked once (boss / exam).
  */
-export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boolean; onFinish: (r: QuizResult) => void; onClose?: () => void }) {
+export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boolean; onFinish: (r: QuizResult) => void; onClose?: () => void; onLearn?: (el: HTMLElement) => void }) {
   const queue = cards.map((c, i) => ({ c, i }));
   const firstWrong = new Set<number>();
+  const isQ = (c: Card) => c.type !== 'learn';
+  const qTotal = cards.filter(isQ).length;
+  const qDone = () => [...solved].filter((i) => isQ(cards[i])).length;
   const solved = new Set<number>();
   let combo = 0;
   let pos = 0;
@@ -56,6 +61,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
   let current: { c: Card; i: number };
 
   const progress = () => { bar.style.width = (solved.size / cards.length) * 100 + '%'; };
+  const restartAnim = () => { body.style.animation = 'none'; void body.offsetWidth; body.style.animation = ''; };
 
   function render() {
     checked = false;
@@ -67,11 +73,23 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
     current = queue[pos];
     const { c, i } = current;
     const retry = firstWrong.has(i);
+    if (c.type === 'learn') {
+      body.innerHTML = `<div class="qz-meta"><span class="tag">📖 শেখো</span></div><div class="pc"><h3 class="pc-title">${esc(c.title || '')}</h3><div class="pc-body">${c.html}</div></div>`;
+      go.textContent = 'বুঝেছি →';
+      go.disabled = false;
+      checked = true;
+      solved.add(i);
+      opts.onLearn?.(body);
+      restartAnim();
+      progress();
+      return;
+    }
     body.innerHTML = `
-      <div class="qz-meta">${retry ? '🔁 আবার চেষ্টা' : `প্রশ্ন ${bn(Math.min(solved.size + 1, cards.length))} / ${bn(cards.length)}`}${c.from ? ` · <span>${esc(c.from)}</span>` : ''}</div>
+      <div class="qz-meta">${retry ? '🔁 আবার চেষ্টা' : `<span class="tag">❓ প্রশ্ন</span>${bn(Math.min(qDone() + 1, qTotal))} / ${bn(qTotal)}`}${c.from ? ` · <span>${esc(c.from)}</span>` : ''}</div>
       <h3 class="qz-q">${md(c.q)}</h3>
       ${c.codeHtml && c.type !== 'line' ? `<div class="q-code">${c.codeHtml}</div>` : ''}
       <div class="qz-ui"></div>`;
+    restartAnim();
     const ui = body.querySelector<HTMLElement>('.qz-ui')!;
     const ready = (ok: boolean) => { go.disabled = !ok; };
 
@@ -167,6 +185,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
       solved.add(i);
       combo++;
       sound('ok');
+      if (!firstWrong.has(i)) flyXp(go);
     } else {
       combo = 0;
       sound('bad');
@@ -190,7 +209,7 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
     if (!checked) return check();
     pos++;
     if (pos >= queue.length) {
-      opts.onFinish({ firstTry: cards.length - firstWrong.size, total: cards.length, missed: [...firstWrong].map((i) => cards[i]) });
+      opts.onFinish({ firstTry: qTotal - firstWrong.size, total: qTotal, missed: [...firstWrong].map((i) => cards[i]) });
       return;
     }
     render();
@@ -207,6 +226,17 @@ export function runQuiz(root: HTMLElement, cards: Card[], opts: { requeue: boole
   render();
   progress();
   root.focus({ preventScroll: true });
+}
+
+function flyXp(anchor: HTMLElement) {
+  const r = anchor.getBoundingClientRect();
+  const f = document.createElement('div');
+  f.className = 'xp-fly';
+  f.textContent = '+১০ XP';
+  f.style.left = r.left + r.width / 2 - 40 + 'px';
+  f.style.top = r.top - 30 + 'px';
+  document.body.append(f);
+  setTimeout(() => f.remove(), 1000);
 }
 
 export const starsFor = (firstTry: number, total: number) => (firstTry / total >= 0.9 ? 3 : firstTry / total >= 0.7 ? 2 : 1);

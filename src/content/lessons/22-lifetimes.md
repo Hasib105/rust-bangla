@@ -5,18 +5,17 @@ part: 5
 order: 22
 summary: "Lifetime annotation compiler-কে জানায় একটা reference কতক্ষণ বৈধ, যাতে dangling reference কখনো তৈরি না হয়।"
 icon: "⏳"
-minutes: 10
+minutes: 6
 video: "h00o91WVDbk"
 ---
 
 ## কেন শিখবো?
 
-C-তে এমন ভুল খুব সহজ: একটা function-এর ভেতরের variable-এর address ফেরত দিলে। function শেষ হলে সেই memory মুছে যায়, আর address ঝুলে থাকে (**dangling pointer**)। এর ফল crash বা অদ্ভুত bug।
-Rust compile time-এই এটা আটকায়। এর হাতিয়ার হলো **lifetime**, মানে একটা reference কতক্ষণ বৈধ থাকবে তার হিসাব। বেশিরভাগ সময় compiler নিজেই হিসাব করে নেয়। শুধু কিছু জায়গায় তোমাকে সাহায্য করতে হয়।
+C-তে function-এর ভেতরের variable-এর address ফেরত দিলে সেটা ঝুলে থাকে (**dangling pointer**)। Rust compile time-এই এটা আটকায়, **lifetime** (reference কতক্ষণ বৈধ) দিয়ে। বেশিরভাগ সময় compiler নিজেই হিসাব করে, শুধু কিছু জায়গায় সাহায্য লাগে।
 
 ## Dangling reference আটকানো
 
-borrowing-এর পাঠে দেখেছো reference কখনো মালিকের চেয়ে বেশিদিন বাঁচতে পারে না। নিচে `r` ভেতরের scope-এর `x`-কে ধরে আছে, কিন্তু `x` আগেই মরে গেছে:
+reference কখনো মালিকের চেয়ে বেশিদিন বাঁচতে পারে না। নিচে `x` আগেই মরে গেছে, কিন্তু `r` তাকে ধরে আছে:
 
 ```rust compile_fail
 fn main() {
@@ -29,12 +28,9 @@ fn main() {
 }
 ```
 
-compiler বলে `x` যথেষ্ট সময় বাঁচেনি, কারণ `println!` পর্যন্ত `r`-এর দরকার ছিল। Rust এই হিসাবটা প্রতিটা reference-এর জন্য করে।
+## `longest<'a>`
 
-## `longest<'a>`: কোন reference কতক্ষণ বাঁচবে
-
-দুটো `&str` থেকে বড়টা ফেরত দেওয়ার function ধরো। ফেরত আসা reference কি প্রথমটার সাথে বাঁধা, না দ্বিতীয়টার? compiler নিজে বুঝতে পারে না, তাই লিখে বলতে হয়।
-`'a` একটা lifetime-এর নাম। নিচের মানে: "দুটো input আর output, তিনটেই অন্তত `'a` সময় ধরে বৈধ। ফলাফল দুই input-এর মধ্যে যেটা কম বাঁচে, তার বেশি বাঁচবে না।"
+দুটো `&str` থেকে বড়টা ফেরত দিলে compiler জানে না ফলাফল কার সাথে বাঁধা। `'a` একটা lifetime-এর নাম: "দুটো input আর output অন্তত `'a` ধরে বৈধ, ফলাফল দুই input-এর যেটা কম বাঁচে তার বেশি বাঁচবে না।" annotation কোনো reference-কে বেশিদিন বাঁচায় না, শুধু সম্পর্ক জানায়।
 
 ```rust
 fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {
@@ -53,29 +49,9 @@ fn main() {
 longest: rustacean
 ```
 
-lifetime annotation কোনো reference-কে বেশিদিন বাঁচায় না। এটা শুধু compiler-কে বলে দেয় reference-গুলোর মধ্যে সম্পর্ক কী, যাতে সে যাচাই করতে পারে।
-
-নিচের কোড এই যাচাইয়ে ধরা পড়ে। `result` ভেতরের scope-এ বানানো `inner`-এর reference হতে পারে, কিন্তু `inner` আগেই মরে যায়:
-
-```rust compile_fail
-fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {
-    if a.len() >= b.len() { a } else { b }
-}
-
-fn main() {
-    let first = String::from("rustacean");
-    let result;
-    {
-        let inner = String::from("crab");
-        result = longest(&first, &inner); // error[E0597]: `inner` does not live long enough
-    }
-    println!("{result}");
-}
-```
-
 ## Struct-এ reference রাখা
 
-struct কোনো reference ধরে রাখলে তারও lifetime লিখতে হয়। মানে: "এই struct তার ধরা text-এর চেয়ে বেশিদিন বাঁচতে পারবে না।"
+struct reference ধরলে তারও lifetime লিখতে হয়: struct তার ধরা text-এর চেয়ে বেশিদিন বাঁচবে না।
 
 ```rust
 struct Excerpt<'a> {
@@ -94,17 +70,10 @@ fn main() {
 Call me Ishmael
 ```
 
-`e` কেবল `novel`-এর ভেতরের অংশ ধার নিয়েছে, তাই `novel` বেঁচে থাকতে থাকতেই `e` ব্যবহার করা যায়।
+## Elision আর `'static`
 
-## Elision: বেশিরভাগ সময় লিখতেই হয় না
-
-প্রতিটা function-এ `'a` লিখতে হলে খুব বিরক্তিকর হতো। তাই compiler তিনটা নিয়মে নিজেই বসিয়ে নেয় (**lifetime elision**):
-
-1. প্রতিটা reference parameter পায় নিজস্ব আলাদা lifetime।
-2. যদি reference parameter ঠিক **একটাই** থাকে, output-ও সেই lifetime পায়।
-3. যদি method-এ `&self` থাকে, output পায় `self`-এর lifetime।
-
-এর বাইরে compiler আন্দাজ করে না, তখন তোমাকে লিখতে হয়। `longest`-এ দুটো reference input, তাই নিয়ম ২ খাটে না। সেজন্যই ওখানে `'a` লাগে।
+compiler তিন নিয়মে নিজেই lifetime বসায় (**elision**): (১) প্রতিটা reference parameter আলাদা lifetime পায়, (২) reference parameter **একটাই** হলে output সেটা পায়, (৩) `&self` থাকলে output `self`-এরটা পায়। `longest`-এ দুটো input, তাই `'a` লাগে।
+`'static` মানে পুরো program জুড়ে বৈধ, যেমন সব string literal (`&'static str`)।
 
 ```rust
 fn first_word(s: &str) -> &str {
@@ -119,29 +88,6 @@ fn main() {
 ```text
 hello
 ```
-
-এখানে একটাই reference input, তাই কোনো `'a` ছাড়াই চলে।
-
-## `'static`
-
-`'static` মানে "পুরো program চলা পর্যন্ত বৈধ"। string literal-এর text binary-র ভেতরেই থাকে, তাই সব literal হলো `&'static str`।
-
-```rust
-fn motto() -> &'static str {
-    "memory safe, no GC"
-}
-
-fn main() {
-    let m = motto();
-    println!("{m}");
-}
-```
-
-```text
-memory safe, no GC
-```
-
-compiler কখনো `'static` লিখতে বললে সাধারণত সেটা ভুল পথ। আগে দেখো তুমি কি আসলে local variable-এর reference ফেরত দিতে চাইছো কি না। তখন `String` ফেরত দেওয়াই ঠিক সমাধান।
 
 ## সাধারণ ভুল
 
@@ -158,16 +104,14 @@ fn main() {
 }
 ```
 
-compiler বলে এই reference কার থেকে ধার নেওয়া, তা বলার মতো কোনো input নেই। আসলে `s` function শেষে মরে যায়, তাই `&s` ফেরত দেওয়া সম্ভবই না। সমাধান হলো মালিকানা ফেরত দেওয়া: `-> String`, আর শেষে শুধু `s`।
+`s` function শেষে মরে যায়, কোনো annotation তাকে বাঁচাতে পারে না। ঠিক করো মালিকানা ফেরত দিয়ে: `-> String`, আর শেষে `s`।
 
 ## নিজে করো
 
-`pick_first<'a>(a: &'a str, b: &str) -> &'a str` নামে একটা function লেখো, যেটা সবসময় প্রথমটা ফেরত দেয় (দ্বিতীয়টার lifetime আলাদা, তাই `b`-তে `'a` নেই)। `main`-এ `"alpha"` আর একটা `String` দিয়ে ডাকো।
+`pick_first<'a>(a: &'a str, b: &str) -> &'a str` লেখো, যা সবসময় প্রথমটা ফেরত দেয়। `main`-এ `"alpha"` আর একটা `String` দিয়ে ডাকো।
 
 <details>
 <summary>সমাধান দেখো</summary>
-
-ফলাফল শুধু `a`-র সাথে বাঁধা, তাই `b`-র আলাদা lifetime হলে সমস্যা নেই।
 
 ```rust
 fn pick_first<'a>(a: &'a str, b: &str) -> &'a str {
@@ -191,7 +135,6 @@ alpha
 
 ## মনে রাখো
 
-- lifetime হলো reference কতক্ষণ বৈধ তার হিসাব। এর কাজ dangling reference আটকানো।
-- `fn longest<'a>(a: &'a str, b: &'a str) -> &'a str` মানে ফলাফল দুই input-এর ছোট lifetime পর্যন্ত বাঁচে।
-- reference রাখা struct-এ lifetime লাগে: `struct Excerpt<'a> { part: &'a str }`।
-- elision-এর নিয়মে বেশিরভাগ জায়গায় lifetime লিখতে হয় না। `'static` মানে পুরো program জুড়ে, যেমন string literal।
+- lifetime হলো reference কতক্ষণ বৈধ তার হিসাব, কাজ dangling reference আটকানো।
+- `longest<'a>`-এ ফলাফল দুই input-এর ছোট lifetime পর্যন্ত বাঁচে। struct-এ reference থাকলে `Excerpt<'a>`।
+- elision-এ বেশিরভাগ জায়গায় লিখতে হয় না। `'static` মানে পুরো program জুড়ে।

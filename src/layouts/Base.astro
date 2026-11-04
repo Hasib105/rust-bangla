@@ -20,7 +20,10 @@ const og = new URL(base + 'og.png', Astro.site);
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={base + 'favicon.png'} />
     <link rel="apple-touch-icon" href={base + 'apple-touch-icon.png'} />
-    <meta name="theme-color" content="#120c09" />
+    <meta name="theme-color" content="#fdf7f1" />
+    <script is:inline>
+      try { if (localStorage.getItem('rb-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
+    </script>
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
@@ -44,6 +47,7 @@ const og = new URL(base + 'og.png', Astro.site);
         <div class="pills">
           <a class="pill fire" href={base + 'profile/'} title="টানা কত দিন শিখছো">🔥 <span data-stat="streak">০</span></a>
           <a class="pill xp" href={base + 'profile/'} title="মোট XP">⚡ <span data-stat="xp">০</span></a>
+          <button class="icon-btn" data-theme-toggle title="লাইট/ডার্ক মোড" aria-label="লাইট/ডার্ক মোড">🌙</button>
           <button class="icon-btn" data-sound title="শব্দ চালু/বন্ধ" aria-label="শব্দ চালু/বন্ধ">🔊</button>
           <a class="pill yt-btn" href={site.youtube} target="_blank" rel="noopener" title="Rust Bangla YouTube">▶<span> YouTube</span></a>
         </div>
