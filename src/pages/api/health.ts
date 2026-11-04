@@ -1,0 +1,27 @@
+// Setup check: which login settings are present/valid (never prints values) and whether the DB answers.
+import type { APIRoute } from 'astro';
+import { getPool } from '../../lib/db';
+
+export const prerender = false;
+
+const env = (k: string) => process.env[k] || (import.meta.env as Record<string, string | undefined>)[k];
+
+export const GET: APIRoute = async () => {
+  const url = env('BETTER_AUTH_URL');
+  let urlOk = false;
+  try { urlOk = !!url && /^https?:\/\/[^\s/]+$/.test(url.replace(/\/$/, '')) && !!new URL(url); } catch {}
+  const checks: Record<string, string> = {
+    DATABASE_URL: env('DATABASE_URL') ? (/^postgres(ql)?:\/\//.test(env('DATABASE_URL')!) ? 'ok' : 'set but not a postgres:// URL') : 'MISSING (connect Neon in Storage)',
+    BETTER_AUTH_SECRET: !env('BETTER_AUTH_SECRET') ? 'MISSING' : env('BETTER_AUTH_SECRET')!.length < 32 ? 'too short (need 32+ chars)' : 'ok',
+    BETTER_AUTH_URL: !url ? 'MISSING' : urlOk ? `ok (${url})` : 'INVALID: must be just the site address like https://rust-bangla.vercel.app',
+    GITHUB_CLIENT_ID: !env('GITHUB_CLIENT_ID') ? 'MISSING' : /\s/.test(env('GITHUB_CLIENT_ID')!) ? 'INVALID: looks like text, paste the real Client ID' : 'ok',
+    GITHUB_CLIENT_SECRET: !env('GITHUB_CLIENT_SECRET') ? 'MISSING' : /\s/.test(env('GITHUB_CLIENT_SECRET')!) ? 'INVALID: looks like text, paste the real secret' : 'ok',
+  };
+  try {
+    const { rows } = await getPool().query(`select to_regclass('public."user"') is not null as auth, to_regclass('public.progress') is not null as progress`);
+    checks.database = rows[0].auth && rows[0].progress ? 'ok (tables exist)' : 'connected, but tables missing (redeploy so the build runs migrations)';
+  } catch (e) {
+    checks.database = 'cannot connect: ' + String((e as Error).message).slice(0, 120);
+  }
+  return new Response(JSON.stringify(checks, null, 2), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+};
