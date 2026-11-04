@@ -6,7 +6,14 @@ export function databaseUrl(): { name: string; url: string } | undefined {
   const all = { ...(import.meta.env as Record<string, string | undefined>), ...process.env };
   for (const k of ['DATABASE_URL', 'POSTGRES_URL', 'NEON_DATABASE_URL']) if (all[k]) return { name: k, url: all[k]! };
   const k = Object.keys(all).find((n) => /(_DATABASE_URL|_POSTGRES_URL)$/.test(n) && !/UNPOOLED|NON_POOLING/.test(n) && all[n]);
-  return k ? { name: k, url: all[k]! } : undefined;
+  if (k) return { name: k, url: all[k]! };
+  // Neon also sets PGHOST / PGUSER / PGPASSWORD / PGDATABASE (sometimes with a prefix)
+  const pick = (base: string) => Object.keys(all).find((n) => (n === base || n.endsWith('_' + base)) && all[n]);
+  const [h, u, pw, d] = ['PGHOST', 'PGUSER', 'PGPASSWORD', 'PGDATABASE'].map(pick);
+  if (h && u && pw && d) {
+    return { name: 'PGHOST/PGUSER/PGPASSWORD/PGDATABASE', url: `postgresql://${encodeURIComponent(all[u]!)}:${encodeURIComponent(all[pw]!)}@${all[h]}/${all[d]}?sslmode=require` };
+  }
+  return undefined;
 }
 const url = databaseUrl()?.url;
 let pool: pg.Pool | undefined;

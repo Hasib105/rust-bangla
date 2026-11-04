@@ -17,6 +17,9 @@ export const GET: APIRoute = async () => {
     GITHUB_CLIENT_ID: !env('GITHUB_CLIENT_ID') ? 'MISSING' : /\s/.test(env('GITHUB_CLIENT_ID')!) ? 'INVALID: looks like text, paste the real Client ID' : 'ok',
     GITHUB_CLIENT_SECRET: !env('GITHUB_CLIENT_SECRET') ? 'MISSING' : /\s/.test(env('GITHUB_CLIENT_SECRET')!) ? 'INVALID: looks like text, paste the real secret' : 'ok',
   };
+  // names only (never values), to see what the Neon integration actually added
+  checks.dbRelatedVarNames = Object.keys(process.env).filter((n) => /DATABASE|POSTGRES|^PG|_PG|NEON/i.test(n)).sort().join(', ') || '(none)';
+  checks.deployment = `${process.env.VERCEL_ENV ?? '?'} · commit ${(process.env.VERCEL_GIT_COMMIT_SHA ?? '?').slice(0, 7)}`;
   try {
     const { rows } = await getPool().query(`select to_regclass('public."user"') is not null as auth, to_regclass('public.progress') is not null as progress`);
     checks.database = rows[0].auth && rows[0].progress ? 'ok (tables exist)' : 'connected, but tables missing (redeploy so the build runs migrations)';
