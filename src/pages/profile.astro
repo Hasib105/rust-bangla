@@ -9,6 +9,26 @@ import { bnN } from '../data/course';
     <h1 class="page-title">প্রোফাইল</h1>
     <div class="panel" data-account-panel style="margin-top:14px"></div>
 
+    <section id="me-extra" hidden>
+      <div class="panel" style="margin-top:12px">
+        <b>তোমার পাবলিক প্রোফাইল</b>
+        <p class="muted" style="margin:2px 0 10px;font-size:15px">এই লিংক বন্ধুদের, LinkedIn বা Facebook-এ শেয়ার করো। এতে তোমার লেভেল, XP, ব্যাজ আর সার্টিফিকেট দেখা যাবে, কিন্তু ইমেইল না।</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <a id="pub-link" class="btn sm alt" target="_blank" rel="noopener"></a>
+          <button class="btn sm alt" id="pub-copy">লিংক কপি</button>
+          <a class="btn sm alt" id="pub-fb" target="_blank" rel="noopener">Facebook-এ শেয়ার</a>
+          <label style="display:flex;gap:6px;align-items:center;margin-left:auto;font-size:15px"><input type="checkbox" id="pub-on" /> প্রোফাইল সবার জন্য খোলা</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">
+          <span class="muted" style="font-size:15px">সার্টিফিকেটে নাম:</span>
+          <input id="cert-name" maxlength="60" style="flex:1;min-width:180px;padding:7px 12px;border-radius:10px;border:1.5px solid var(--line2);background:var(--bg);color:var(--text);font:600 16px var(--font)" />
+          <button class="btn sm" id="name-save">সেভ</button>
+        </div>
+      </div>
+      <h2 style="margin-top:26px">সার্টিফিকেট</h2>
+      <div class="cert-list" id="cert-list"></div>
+    </section>
+
     <div class="stats4" data-reveal>
       <div class="stat"><div class="k"><Fragment set:html={icon('medal', 16)} />লেভেল <span data-stat="level">১</span></div><div class="v" data-stat="rank">নতুন</div><div class="bar"><i data-rank-bar></i></div><small class="muted" data-rank-next></small></div>
       <div class="stat"><div class="k"><Fragment set:html={icon('bolt', 16)} />মোট XP</div><div class="v" data-stat="xp">০</div></div>
@@ -48,6 +68,8 @@ import { bnN } from '../data/course';
 <script>
   import { load, save, rankOf, importState, exportState, reset, today, bn } from '../scripts/store';
   import { toast } from '../scripts/ui';
+  import { icon } from '../scripts/icons';
+  import { currentUser } from '../scripts/account';
 
   function paint() {
     const s = load();
@@ -75,6 +97,39 @@ import { bnN } from '../data/course';
   }
   paint();
   window.addEventListener('rb:state', paint);
+
+  // account extras (only when signed in): public profile + certificates
+  const extra = document.getElementById('me-extra')!;
+  async function loadMe() {
+    const res = await fetch(import.meta.env.BASE_URL.replace(/\/?$/, '/') + 'api/me', { cache: 'no-store' }).catch(() => null);
+    if (!res || !res.ok) { extra.hidden = true; return; }
+    const { user, certificates } = await res.json();
+    extra.hidden = false;
+    const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+    const url = user.username ? new URL(base + 'u/' + user.username, location.origin).href : '';
+    const link = document.getElementById('pub-link') as HTMLAnchorElement;
+    link.href = url; link.textContent = url.replace(/^https?:\/\//, '');
+    (document.getElementById('pub-fb') as HTMLAnchorElement).href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+    document.getElementById('pub-copy')!.onclick = async () => { try { await navigator.clipboard.writeText(url); toast('লিংক কপি হয়েছে', '', 'copy'); } catch { prompt('লিংক:', url); } };
+    const on = document.getElementById('pub-on') as HTMLInputElement;
+    on.checked = user.profilePublic;
+    on.onchange = async () => {
+      await fetch(base + 'api/me', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ profilePublic: on.checked }) });
+      toast(on.checked ? 'প্রোফাইল এখন সবার জন্য খোলা' : 'প্রোফাইল এখন লুকানো', 'কয়েক মিনিটের মধ্যে কার্যকর হবে');
+    };
+    const nameIn = document.getElementById('cert-name') as HTMLInputElement;
+    nameIn.value = user.name || '';
+    document.getElementById('name-save')!.onclick = async () => {
+      const r = await fetch(base + 'api/me', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nameIn.value }) });
+      toast(r.ok ? 'নাম সেভ হয়েছে' : 'সেভ হয়নি', r.ok ? 'সব সার্টিফিকেটে এই নাম থাকবে' : '', r.ok ? 'check' : 'x');
+    };
+    const list = document.getElementById('cert-list')!;
+    list.innerHTML = certificates.length
+      ? certificates.map((c: any) => `<a class="cert-item" href="${base}cert/${c.id}"><span class="ci">${icon(c.kind === 'course' ? 'crown' : 'medal', 22)}</span><span><b>${c.title}</b><small>${bn(c.score)}/${bn(c.total)} · ${new Date(c.issuedAt).toLocaleDateString('bn-BD')}</small></span></a>`).join('')
+      : '<p class="muted">এখনো নেই। কোনো পর্বের চ্যালেঞ্জ জিতলে (৭/১০) সেই পর্বের সার্টিফিকেট পাবে, আর ফাইনাল পরীক্ষায় পাশ করলে পুরো কোর্সের।</p>';
+  }
+  window.addEventListener('rb:account', (e) => { if ((e as CustomEvent).detail) loadMe(); else extra.hidden = true; });
+  if (currentUser()) loadMe(); // already known from this tab's sync cache
 
   document.querySelector<HTMLButtonElement>('[data-sound-toggle]')!.onclick = () => { const s = load(); s.sound = !s.sound; save(s); };
   document.getElementById('exp')!.onclick = async () => {

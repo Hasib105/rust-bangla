@@ -1,0 +1,93 @@
+---
+// Public profile: /u/<github login>. Rendered on demand, cached by the CDN for 5 minutes.
+import Base from '../../layouts/Base.astro';
+import { getPool } from '../../lib/db';
+import { listCerts } from '../../lib/certs';
+import { badges, rankOf } from '../../scripts/store';
+import { icon } from '../../scripts/icons';
+import { courses } from '../../data/courses';
+import { getCollection } from 'astro:content';
+import { bnN } from '../../data/course';
+
+export const prerender = false;
+
+const username = (Astro.params.username || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40);
+const db = getPool();
+const { rows } = await db.query(
+  `select u.id, u.name, u.image, u.username, u."profilePublic", u."createdAt", p.state, coalesce(p.xp, 0) as xp
+   from "user" u left join progress p on p."userId" = u.id where u.username = $1`, [username]);
+const u = rows[0];
+if (!u || u.profilePublic === false) return new Response('Not found', { status: 404, headers: { 'cache-control': 'public, s-maxage=60' } });
+Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600');
+
+const state = u.state ?? { lessons: {}, badges: [], streak: { max: 0 } };
+const certs = await listCerts(db, u.id);
+const rank = rankOf(u.xp);
+const lessons = await getCollection('lessons');
+const perCourse = courses.filter((c) => c.status === 'live').map((c) => {
+  const total = lessons.filter((l) => l.id.startsWith(c.id + '/')).length;
+  const done = Object.keys(state.lessons || {}).filter((k) => k.startsWith(c.id + '/')).length;
+  return { ...c, total, done };
+});
+const got = badges.filter((b) => (state.badges || []).includes(b.id));
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const url = new URL(`${base}u/${u.username}`, Astro.site).href;
+const since = new Date(u.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long' });
+---
+<Base title={`${u.name} (@${u.username})`} description={`${u.name} Rust বাংলা-য় শিখছেন: লেভেল ${rank.level}, ${u.xp} XP, ${certs.length}টা সার্টিফিকেট।`}>
+  <div class="narrow" style="padding:34px 0 40px">
+    <div class="pub-head">
+      {u.image && <img class="avatar" src={u.image} alt="" width="88" height="88" style="width:88px;height:88px" />}
+      <div>
+        <h1 style="margin:0;font-size:32px;line-height:1.2">{u.name}</h1>
+        <div class="muted">@{u.username} · {since} থেকে শিখছে</div>
+        <a class="muted" href={`https://github.com/${u.username}`} target="_blank" rel="noopener" style="display:inline-flex;gap:6px;align-items:center;margin-top:4px"><Fragment set:html={icon('github', 16)} />GitHub</a>
+      </div>
+    </div>
+
+    <div class="stats4" style="margin-top:22px">
+      <div class="stat"><div class="k">লেভেল {bnN(rank.level)}</div><div class="v">{rank.name}</div></div>
+      <div class="stat"><div class="k">মোট XP</div><div class="v">{bnN(u.xp)}</div></div>
+      <div class="stat"><div class="k">সর্বোচ্চ টানা</div><div class="v">{bnN(state.streak?.max ?? 0)} দিন</div></div>
+      <div class="stat"><div class="k">সার্টিফিকেট</div><div class="v">{bnN(certs.length)}</div></div>
+    </div>
+
+    <h2>কোর্স</h2>
+    {perCourse.map((c) => (
+      <div class="panel" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between"><b>{c.title}</b><span class="muted">{bnN(c.done)}/{bnN(c.total)} পাঠ</span></div>
+        <div class="bar green" style="margin-top:8px"><i style={`width:${c.total ? (c.done / c.total) * 100 : 0}%`}></i></div>
+      </div>
+    ))}
+
+    <h2 style="margin-top:28px">সার্টিফিকেট</h2>
+    {certs.length ? (
+      <div class="cert-list">
+        {certs.map((c) => (
+          <a class="cert-item" href={`${base}cert/${c.id}`}>
+            <span class="ci" set:html={icon(c.kind === 'course' ? 'crown' : 'medal', 22)} />
+            <span><b>{c.title}</b><small>{bnN(c.score)}/{bnN(c.total)} · {new Date(c.issuedAt).toLocaleDateString('bn-BD')}</small></span>
+          </a>
+        ))}
+      </div>
+    ) : <p class="muted">এখনো কোনো সার্টিফিকেট নেই।</p>}
+
+    {got.length > 0 && <>
+      <h2 style="margin-top:28px">ব্যাজ</h2>
+      <div class="badge-grid">
+        {got.map((b) => <div class="badge got"><div class="bi" set:html={icon(b.icon, 26)} /><b>{b.name}</b><small>{b.desc}</small></div>)}
+      </div>
+    </>}
+
+    <div class="share" style="margin-top:30px">
+      <button class="btn alt" data-copy={url}><Fragment set:html={icon('copy', 18)} /> প্রোফাইল লিংক কপি</button>
+      <a class="btn" href={base}>তুমিও শুরু করো</a>
+    </div>
+  </div>
+</Base>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = 'কপি হয়েছে'; } catch { prompt('লিংক কপি করো:', b.dataset.copy!); }
+  }));
+</script>

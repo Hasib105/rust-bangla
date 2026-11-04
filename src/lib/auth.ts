@@ -11,7 +11,18 @@ export function authOptions() {
     baseURL: env('BETTER_AUTH_URL'), // e.g. https://rust-bangla.vercel.app (falls back to the request origin)
     basePath: '/api/auth',
     socialProviders: {
-      github: { clientId: env('GITHUB_CLIENT_ID') ?? '', clientSecret: env('GITHUB_CLIENT_SECRET') ?? '' },
+      github: {
+        clientId: env('GITHUB_CLIENT_ID') ?? '',
+        clientSecret: env('GITHUB_CLIENT_SECRET') ?? '',
+        // public profile URL is /u/<github login>
+        mapProfileToUser: (p: { login?: string; name?: string | null }) => ({ username: p.login?.toLowerCase(), name: p.name || p.login }),
+      },
+    },
+    user: {
+      additionalFields: {
+        username: { type: 'string', required: false, input: false },
+        profilePublic: { type: 'boolean', required: false, defaultValue: true, input: false },
+      },
     },
     session: {
       expiresIn: 60 * 60 * 24 * 60, // 60 days

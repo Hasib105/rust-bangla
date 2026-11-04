@@ -41,11 +41,11 @@ const base = baseUrl();
     </div>
   </section>
   <div class="layer" id="layer" hidden></div>
-  <script is:inline type="application/json" id="exam-data" set:html={JSON.stringify({ course: course.id, pool, home: `${base}${course.id}/` }).replace(/</g, '\\u003c')} />
+  <script is:inline type="application/json" id="exam-data" set:html={JSON.stringify({ course: course.id, base, pool, home: `${base}${course.id}/` }).replace(/</g, '\\u003c')} />
 </Base>
 
 <script>
-  import { ensureLogin, track } from '../../scripts/account';
+  import { ensureLogin, track, whenCert, currentUser, signIn } from '../../scripts/account';
   import { site } from '../../data/courses';
   import { runQuiz } from '../../scripts/quiz';
   import { load, save, gain, bn } from '../../scripts/store';
@@ -92,9 +92,19 @@ const base = baseUrl();
           title: pass ? 'অভিনন্দন, তুমি পাশ করেছো!' : 'এবার হলো না, আবার চেষ্টা করো',
           stats: [[`${bn(Math.round((firstTry / total) * 100))}%`, 'স্কোর'], [`+${bn(firstPass ? 200 : 0)}`, 'XP'], ['৭০%', 'পাশ নম্বর']],
           missed,
-          actions: `${pass ? '<button class="btn" id="see">সার্টিফিকেট দেখো</button>' : ''}<a class="btn alt" href="${data.home}">কোর্সে ফিরে যাও</a>`,
+          actions: `${pass ? '<div id="cert-slot"></div><button class="btn alt" id="see">প্রিন্টের জন্য সার্টিফিকেট</button>' : ''}<a class="btn alt" href="${data.home}">কোর্সে ফিরে যাও</a>`,
         });
         layer.scrollTop = 0;
+        const slot = document.getElementById('cert-slot');
+        if (slot && !currentUser()) {
+          slot.innerHTML = '<button class="btn green block">GitHub দিয়ে লগইন করে শেয়ার করার মতো সার্টিফিকেট নাও</button>';
+          slot.querySelector('button')!.onclick = () => signIn(location.pathname);
+        } else if (slot) {
+          slot.innerHTML = '<p class="muted">সার্টিফিকেট তৈরি হচ্ছে...</p>';
+          whenCert(data.course, 'course').then((c) => {
+            slot.innerHTML = c ? `<a class="btn green block" href="${data.base}cert/${c.id}">তোমার সার্টিফিকেট দেখো ও শেয়ার করো</a>` : '';
+          });
+        }
         const see = document.getElementById('see');
         if (see) see.onclick = () => { layer.hidden = true; document.body.style.overflow = ''; showCert(); document.getElementById('cert-wrap')!.scrollIntoView(); };
       },

@@ -28,11 +28,11 @@ const base = baseUrl();
     <button class="btn" id="fight">চ্যালেঞ্জ শুরু করো</button>
   </section>
   <div class="layer" id="layer" hidden></div>
-  <script is:inline type="application/json" id="boss-data" set:html={JSON.stringify({ key: `${course.id}:${part.id}`, pool, home: `${base}${course.id}/`, next: nextPart ? `${base}${course.id}/${nextPart.lessons[0].slug}/` : `${base}${course.id}/exam/` }).replace(/</g, '\\u003c')} />
+  <script is:inline type="application/json" id="boss-data" set:html={JSON.stringify({ key: `${course.id}:${part.id}`, base, pool, home: `${base}${course.id}/`, next: nextPart ? `${base}${course.id}/${nextPart.lessons[0].slug}/` : `${base}${course.id}/exam/` }).replace(/</g, '\\u003c')} />
 </Base>
 
 <script>
-  import { ensureLogin, track } from '../../../scripts/account';
+  import { ensureLogin, track, whenCert, currentUser, signIn } from '../../../scripts/account';
   import { site } from '../../../data/courses';
   const REQUIRE = site.requireLogin;
   import { runQuiz } from '../../../scripts/quiz';
@@ -74,15 +74,29 @@ const base = baseUrl();
           sub: won ? 'এই পর্বের ধারণাগুলো তোমার ভালো বোঝা হয়েছে।' : 'ভুলগুলোর পাঠ আরেকবার দেখে আবার চেষ্টা করো। ৭টা ঠিক লাগবে।',
           stats: [[`+${bn(xp)}`, 'XP'], [`${bn(s.bosses[data.key])}/১০`, 'সেরা স্কোর'], [bn(s.streak.count), 'দিন টানা']],
           missed,
-          actions: `${won ? `<a class="btn" href="${data.next}">পরের পর্বে যাও</a>` : ''}
+          actions: `${won ? '<div id="cert-slot" class="cert-new"></div>' : ''}${won ? `<a class="btn" href="${data.next}">পরের পর্বে যাও</a>` : ''}
             <button class="btn ${won ? 'alt' : ''}" id="again">আবার চেষ্টা করো</button>
             <a class="btn alt" href="${data.home}">কোর্সে ফিরে যাও</a>`,
         });
         layer.scrollTop = 0;
         document.getElementById('again')!.onclick = start;
         showBest();
+        if (won) showCert();
       },
     });
+  }
+  async function showCert() {
+    const slot = document.getElementById('cert-slot');
+    if (!slot) return;
+    const [course, part] = data.key.split(':');
+    if (!currentUser()) {
+      slot.innerHTML = '<button class="btn green block">GitHub দিয়ে লগইন করে সার্টিফিকেট নাও</button>';
+      slot.querySelector('button')!.onclick = () => signIn(location.pathname);
+      return;
+    }
+    slot.innerHTML = '<p class="muted">সার্টিফিকেট তৈরি হচ্ছে...</p>';
+    const c = await whenCert(course, 'part', Number(part));
+    slot.innerHTML = c ? `<a class="btn green block" href="${data.base}cert/${c.id}">তোমার সার্টিফিকেট দেখো ও শেয়ার করো</a>` : '<p class="muted">সার্টিফিকেট পরে প্রোফাইলে পাবে।</p>';
   }
   document.getElementById('fight')!.addEventListener('click', start);
 </script>

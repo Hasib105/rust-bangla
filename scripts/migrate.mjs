@@ -16,6 +16,8 @@ const pool = new pg.Pool({ connectionString: url, ssl: /localhost|127\.0\.0\.1/.
 const { toBeCreated, toBeAdded, runMigrations } = await getMigrations({
   database: pool,
   socialProviders: { github: { clientId: 'x', clientSecret: 'x' } },
+  // keep in sync with src/lib/auth.ts
+  user: { additionalFields: { username: { type: 'string', required: false }, profilePublic: { type: 'boolean', required: false, defaultValue: true } } },
 });
 if (toBeCreated.length || toBeAdded.length) {
   console.log('[migrate] auth tables:', [...toBeCreated, ...toBeAdded].map((t) => t.table).join(', '));
@@ -57,6 +59,22 @@ await pool.query(`
   );
   create index if not exists attempts_user_idx on attempts ("userId", "createdAt" desc);
   create index if not exists attempts_ref_idx on attempts (ref);
+
+  create unique index if not exists user_username_idx on "user" (username);
+
+  -- certificates: one per finished part (kind 'part') and per passed final exam (kind 'course')
+  create table if not exists certificates (
+    id text primary key,                      -- short public id, used in /cert/<id>
+    "userId" text not null references "user"(id) on delete cascade,
+    course text not null,
+    kind text not null,                       -- 'part' | 'course'
+    part integer not null default 0,          -- 0 for course certificates
+    name text not null,                       -- learner name printed on it
+    score integer not null,
+    total integer not null,
+    "issuedAt" timestamptz not null default now(),
+    unique ("userId", course, kind, part)
+  );
 `);
 console.log('[migrate] done');
 await pool.end();

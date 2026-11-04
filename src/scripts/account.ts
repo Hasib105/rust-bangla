@@ -20,6 +20,10 @@ let applying = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let lastSig = '';
 const pending: Event[] = [];
+export type CertInfo = { id: string; course: string; kind: 'part' | 'course'; part: number; title: string; score: number; total: number };
+let certs: CertInfo[] = [];
+export const getCerts = () => certs;
+const setCerts = (list: CertInfo[] | undefined) => { if (!list) return; certs = list; window.dispatchEvent(new CustomEvent('rb:certs', { detail: certs })); };
 
 const ls = {
   get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -79,12 +83,13 @@ async function push(state: State) {
     const res = await fetch(API + 'progress', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ state, events }), keepalive: true });
     if (res.status === 401) { user = null; ls.set(FLAG, null); ss.set(null); paint(); return; }
     if (!res.ok) { pending.unshift(...events); return; }
-    const { state: merged } = await res.json();
+    const { state: merged, certificates } = await res.json();
+    setCerts(certificates);
     applying = true;
     save({ ...merged, sound: load().sound });
     applying = false;
     lastSig = sig(merged);
-    ss.set({ at: Date.now(), user, sig: lastSig });
+    ss.set({ at: Date.now(), user, sig: lastSig, certs });
   } catch {
     pending.unshift(...events); // offline: retry with the next save
   }
@@ -102,6 +107,7 @@ async function init() {
     if (!fresh && cached && Date.now() - cached.at < FRESH_MS && cached.user) {
       user = cached.user; // recent sync in this tab session: no request
       lastSig = cached.sig;
+      setCerts(cached.certs || []);
     } else {
       try {
         const res = await fetch(API + 'progress', { cache: 'no-store' });
@@ -115,7 +121,7 @@ async function init() {
             const merged = merge(data.state, local);
             if (sig(merged) === lastSig) {
               applying = true; save({ ...merged, sound: local.sound }); applying = false;
-              ss.set({ at: Date.now(), user, sig: lastSig });
+              ss.set({ at: Date.now(), user, sig: lastSig, certs });
             } else await push(merged); // this browser has something new
           } else await push(local);
         } else { user = null; ls.set(FLAG, null); ss.set(null); }
@@ -149,6 +155,20 @@ function paint() {
     }
   });
   window.dispatchEvent(new CustomEvent('rb:account', { detail: user }));
+}
+
+/** Certificate for a won part / passed exam: waits for the save that issues it. */
+export function whenCert(course: string, kind: 'part' | 'course', part = 0): Promise<CertInfo | null> {
+  const find = () => certs.find((c) => c.course === course && c.kind === kind && c.part === part) ?? null;
+  return new Promise((resolve) => {
+    if (!user) return resolve(null);
+    const hit = find();
+    if (hit) return resolve(hit);
+    const t = setTimeout(() => { removeEventListener('rb:certs', on); resolve(find()); }, 15000);
+    const on = () => { const h = find(); if (h) { clearTimeout(t); removeEventListener('rb:certs', on); resolve(h); } };
+    addEventListener('rb:certs', on);
+    schedule(0);
+  });
 }
 
 /** For site.requireLogin: true if the learner may play now; otherwise starts sign-in. */

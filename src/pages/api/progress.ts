@@ -5,6 +5,7 @@ import type { APIRoute } from 'astro';
 import { getAuth } from '../../lib/auth';
 import { getPool } from '../../lib/db';
 import { merge, xpOf } from '../../scripts/merge';
+import { issueCerts, listCerts } from '../../lib/certs';
 
 export const prerender = false;
 
@@ -65,8 +66,10 @@ export const PUT: APIRoute = async ({ request }) => {
         );
       }
     }
+    await issueCerts(db, user.id, user.name || (user as any).username || 'Rust শিক্ষার্থী', state);
+    const certificates = await listCerts(db, user.id);
     await db.query('commit');
-    return json({ state });
+    return json({ state, certificates });
   } catch (err) {
     await db.query('rollback').catch(() => {});
     throw err;

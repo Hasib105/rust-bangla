@@ -1,0 +1,54 @@
+---
+// Public, shareable certificate. Rendered on demand, then cached by Vercel's CDN.
+import Base from '../../layouts/Base.astro';
+import { getPool } from '../../lib/db';
+import { certTitle } from '../../lib/certs';
+import { icon } from '../../scripts/icons';
+import { bnN } from '../../data/course';
+
+export const prerender = false;
+
+const id = (Astro.params.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 20);
+const { rows } = await getPool().query(
+  `select c.*, u.username, u."profilePublic" from certificates c join "user" u on u.id = c."userId" where c.id = $1`, [id]);
+const c = rows[0];
+if (!c) return new Response('Not found', { status: 404 });
+Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const title = certTitle(c);
+const url = new URL(`${base}cert/${c.id}`, Astro.site).href;
+const issued = new Date(c.issuedAt);
+const date = issued.toLocaleDateString('bn-BD', { timeZone: 'Asia/Dhaka', year: 'numeric', month: 'long', day: 'numeric' });
+const shareText = `আমি Rust বাংলা-য় "${title}" শেষ করে সার্টিফিকেট পেয়েছি!`;
+const linkedin = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent('Rust Bangla: ' + title)}&organizationName=${encodeURIComponent('Rust বাংলা')}&issueYear=${issued.getFullYear()}&issueMonth=${issued.getMonth() + 1}&certUrl=${encodeURIComponent(url)}&certId=${c.id}`;
+---
+<Base title={`${c.name}: ${title} সার্টিফিকেট`} description={`${c.name} Rust বাংলা-র "${title}" সফলভাবে শেষ করেছেন (${c.score}/${c.total})।`} ogType="article">
+  <section class="narrow" style="padding:30px 0 40px">
+    <div class="cert">
+      <img src={base + 'logo-mark-256.png'} alt="" />
+      <div style="letter-spacing:3px;font-weight:600;margin-top:8px">RUST বাংলা</div>
+      <h2>সার্টিফিকেট</h2>
+      <div>এই মর্মে প্রত্যয়ন করা যাচ্ছে যে</div>
+      <div class="name">{c.name}</div>
+      <div><b>{title}</b>{c.kind === 'part' ? ' পর্বটি শেষ করে চ্যালেঞ্জে' : ' কোর্সের ফাইনাল পরীক্ষায়'} <b>{bnN(c.score)}/{bnN(c.total)}</b> পেয়ে সফলভাবে উত্তীর্ণ হয়েছেন।</div>
+      <div style="margin-top:18px;font-size:14px">তারিখ: {date} · সার্টিফিকেট আইডি: {c.id}</div>
+      <div style="font-size:13px;color:#7a6a5a;margin-top:4px">যাচাই করো: {url}</div>
+    </div>
+    <div class="share">
+      <button class="btn" onclick="window.print()"><Fragment set:html={icon('print', 18)} /> প্রিন্ট / PDF</button>
+      <a class="btn alt" href={linkedin} target="_blank" rel="noopener">LinkedIn-এ যোগ করো</a>
+      <a class="btn alt" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener">Facebook</a>
+      <a class="btn alt" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener">X</a>
+      <button class="btn alt" data-copy={url}><Fragment set:html={icon('copy', 18)} /> লিংক কপি</button>
+    </div>
+    {c.username && c.profilePublic && <p style="text-align:center"><a href={`${base}u/${c.username}`}>{c.name}-এর প্রোফাইল দেখো</a></p>}
+    <p class="muted" style="text-align:center">তুমিও শিখতে চাও? <a href={base}>Rust বাংলা-য় ফ্রি শুরু করো</a></p>
+  </section>
+</Base>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = 'কপি হয়েছে'; } catch { prompt('লিংক কপি করো:', b.dataset.copy!); }
+  }));
+</script>

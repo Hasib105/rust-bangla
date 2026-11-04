@@ -411,3 +411,14 @@ mark.blank { background: rgba(108,156,255,.3); color: #cfe0ff; border-radius: 4p
 .acct { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .acct > div { flex: 1; min-width: 220px; }
 .acct small { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14.5px; }
+
+/* ---------- certificates + public profile ---------- */
+.share { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+.pub-head { display: flex; gap: 18px; align-items: center; }
+.pub-head .avatar { border-width: 3px; }
+.cert-list { display: grid; gap: 10px; }
+.cert-item { display: flex; gap: 14px; align-items: center; border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; text-decoration: none; color: var(--text); background: var(--card); transition: border-color .2s, transform .2s; }
+.cert-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+.cert-item .ci { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+.cert-item small { display: block; color: var(--muted); }
+.cert-new { margin-top: 10px; }
