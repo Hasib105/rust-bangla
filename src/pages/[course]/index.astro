@@ -10,8 +10,28 @@ export function getStaticPaths() {
 const course = await getCourseTree(Astro.params.course!);
 const base = baseUrl();
 const url = (slug: string) => `${base}${course.id}/${slug}/`;
+const abs = (p: string) => new URL(p, Astro.site).href;
+const hours = Math.max(1, Math.round(course.lessons.reduce((n, l) => n + l.minutes, 0) / 60));
+const jsonLd = [
+  {
+    '@context': 'https://schema.org', '@type': 'Course',
+    name: `${course.title} প্রোগ্রামিং কোর্স (বাংলা)`, description: course.description, inLanguage: 'bn', url: abs(`${base}${course.id}/`),
+    isAccessibleForFree: true, educationalLevel: 'Beginner to Advanced',
+    provider: { '@type': 'Organization', name: 'Rust বাংলা', sameAs: abs(base) },
+    offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD', category: 'Free' },
+    hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online', courseWorkload: `PT${hours}H` },
+    syllabusSections: course.parts.map((p) => ({ '@type': 'Syllabus', name: `পর্ব ${p.id}: ${p.title}`, description: p.subtitle })),
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'কোর্স', item: abs(base) },
+      { '@type': 'ListItem', position: 2, name: course.title, item: abs(`${base}${course.id}/`) },
+    ],
+  },
+];
 ---
-<Base title={`${course.title} কোর্স`} description={course.description} nav="courses">
+<Base title={`${course.title} প্রোগ্রামিং কোর্স বাংলায় (শূন্য থেকে Advanced)`} description={`বাংলায় ${course.title} শেখো: ${course.description}`} nav="courses" jsonLd={jsonLd}>
   <div class="wrap course">
     <aside class="side">
       <div class="box">

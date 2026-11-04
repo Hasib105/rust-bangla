@@ -11,7 +11,7 @@ const course = await getCourseTree(Astro.params.course!);
 const pool = (await Promise.all(course.lessons.map((l) => getCards(l.id, l.short)))).flat();
 const base = baseUrl();
 ---
-<Base title={`${course.title}: ফাইনাল পরীক্ষা`} description={`${course.title} কোর্সের ${bnN(course.lessons.length)}টা পাঠ থেকে ৩০টা প্রশ্ন। ৭০% পেলে সার্টিফিকেট।`} nav="courses">
+<Base title={`${course.title}: ফাইনাল পরীক্ষা`} description={`${course.title} কোর্সের ${bnN(course.lessons.length)}টা পাঠ থেকে ৩০টা প্রশ্ন। ৭০% পেলে সার্টিফিকেট।`} nav="courses" noindex>
   <section class="narrow challenge" id="intro">
     <div class="big" set:html={icon('trophy', 40)} />
     <div class="crumbs" style="justify-content:center"><a href={`${base}${course.id}/`}>{course.title}</a></div>
@@ -45,7 +45,7 @@ const base = baseUrl();
 </Base>
 
 <script>
-  import { ensureLogin } from '../../scripts/account';
+  import { ensureLogin, track } from '../../scripts/account';
   import { site } from '../../data/courses';
   import { runQuiz } from '../../scripts/quiz';
   import { load, save, gain, bn } from '../../scripts/store';
@@ -84,6 +84,7 @@ const base = baseUrl();
         if (!old || firstTry >= old.score) s.exams[data.course] = { score: firstTry, total, name: nameEl.value.trim(), at: new Date().toISOString() };
         const nb = gain(s, firstPass ? 200 : 0);
         save(s);
+        track({ kind: 'exam', ref: data.course, score: firstTry, total });
         if (pass) { sound('win'); confetti(180); } else sound('bad');
         announceBadges(nb);
         layer.innerHTML = resultHtml({

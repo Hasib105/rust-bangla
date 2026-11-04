@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel';
+import sitemap from '@astrojs/sitemap';
 
 // Marks Rust blocks so the client can add ▶ Run buttons:
 //   ```rust               -> runnable (data-run)
@@ -30,6 +31,8 @@ export default defineConfig({
   trailingSlash: 'ignore', // API routes (better-auth callbacks) must not be redirected
   // Pages are prerendered (static, served from Vercel's CDN); only /api/* runs as a function (login + progress sync).
   adapter: vercel(),
+  // sitemap: only the pages worth ranking (no profile / challenge / exam / api)
+  integrations: [sitemap({ filter: (page) => !/\/(profile|challenge|exam|api)(\/|$)/.test(new URL(page).pathname) })],
   markdown: {
     shikiConfig: { theme: 'github-dark-dimmed', transformers: [runMarker] },
   },

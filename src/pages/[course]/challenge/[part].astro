@@ -18,7 +18,7 @@ const pool = (await Promise.all(part.lessons.map((l) => getCards(l.id, l.short))
 const nextPart = course.parts.find((p) => p.id === part.id + 1);
 const base = baseUrl();
 ---
-<Base title={`পর্ব ${bnN(part.id)}-এর চ্যালেঞ্জ`} description={`${course.title}: ${part.title} পর্বের সব পাঠ থেকে ১০টা প্রশ্ন।`} nav="courses">
+<Base title={`পর্ব ${bnN(part.id)}-এর চ্যালেঞ্জ`} description={`${course.title}: ${part.title} পর্বের সব পাঠ থেকে ১০টা প্রশ্ন।`} nav="courses" noindex>
   <section class="narrow challenge">
     <div class="big" set:html={icon('trophy', 40)} />
     <div class="crumbs" style="justify-content:center"><a href={`${base}${course.id}/`}>{course.title}</a><span>/</span><span>পর্ব {bnN(part.id)}</span></div>
@@ -32,7 +32,7 @@ const base = baseUrl();
 </Base>
 
 <script>
-  import { ensureLogin } from '../../../scripts/account';
+  import { ensureLogin, track } from '../../../scripts/account';
   import { site } from '../../../data/courses';
   const REQUIRE = site.requireLogin;
   import { runQuiz } from '../../../scripts/quiz';
@@ -65,6 +65,7 @@ const base = baseUrl();
         const xp = firstWin ? 50 : 0;
         const nb = gain(s, xp);
         save(s);
+        track({ kind: 'challenge', ref: data.key, score: firstTry, total });
         if (won) { sound('win'); confetti(140); } else sound('bad');
         announceBadges(nb);
         layer.innerHTML = resultHtml({

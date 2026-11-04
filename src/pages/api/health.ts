@@ -23,6 +23,14 @@ export const GET: APIRoute = async () => {
   try {
     const { rows } = await getPool().query(`select to_regclass('public."user"') is not null as auth, to_regclass('public.progress') is not null as progress`);
     checks.database = rows[0].auth && rows[0].progress ? 'ok (tables exist)' : 'connected, but tables missing (redeploy so the build runs migrations)';
+    if (rows[0].auth && rows[0].progress) {
+      const c = await getPool().query(`select (select count(*) from "user")::int as users, (select count(*) from progress)::int as saved,
+        (select count(*) from lesson_progress)::int as lessons, (select count(*) from attempts)::int as attempts`).catch(() => null);
+      if (c) checks.records = `users ${c.rows[0].users} · saved progress ${c.rows[0].saved} · lesson rows ${c.rows[0].lessons} · attempts ${c.rows[0].attempts}`;
+    }
+    const host = databaseUrl()?.url.match(/@([^/:?]+)/)?.[1] ?? '';
+    checks.dbRegion = host.match(/\.([a-z]+-[a-z]+-\d)\./)?.[1] ?? host.split('.').slice(-4, -2).join('.') ?? '?';
+    checks.functionRegion = process.env.VERCEL_REGION ?? '?';
   } catch (e) {
     checks.database = 'cannot connect: ' + String((e as Error).message).slice(0, 120);
   }

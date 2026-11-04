@@ -3,10 +3,11 @@ import '../styles/global.css';
 import { site } from '../data/courses';
 import { icon } from '../scripts/icons';
 
-interface Props { title?: string; description?: string; nav?: 'courses' | 'profile' }
-const { title, description = 'Rust শেখো বাংলায়, খেলতে খেলতে। ছোট পাঠ, ইন্টারঅ্যাকটিভ প্রশ্ন, XP আর ব্যাজ। লগইন লাগে না, পুরোপুরি ফ্রি।', nav } = Astro.props;
+interface Props { title?: string; description?: string; nav?: 'courses' | 'profile'; noindex?: boolean; jsonLd?: object | object[]; ogType?: string }
+const { title, description = 'বাংলায় Rust প্রোগ্রামিং শেখো, শূন্য থেকে Advanced। ছোট পাঠ, প্রতিটা ধাপে প্রশ্ন, ব্রাউজারেই কোড চালাও। পুরোপুরি ফ্রি।', nav, noindex = false, jsonLd, ogType = 'website' } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-const fullTitle = title ? `${title} | Rust বাংলা` : 'Rust বাংলা: খেলতে খেলতে Rust শেখো';
+const fullTitle = title ? `${title} | Rust বাংলা` : 'Rust বাংলা: বাংলায় Rust প্রোগ্রামিং শেখো (ফ্রি কোর্স)';
+const gsv = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const og = new URL(base + 'og.png', Astro.site);
 ---
@@ -18,18 +19,27 @@ const og = new URL(base + 'og.png', Astro.site);
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    {gsv && <meta name="google-site-verification" content={gsv} />}
+    <link rel="sitemap" href={base + 'sitemap-index.xml'} />
     <link rel="icon" href={base + 'favicon.png'} />
     <link rel="apple-touch-icon" href={base + 'apple-touch-icon.png'} />
     <meta name="theme-color" content="#ffffff" />
     <script is:inline>
       try { if (localStorage.getItem('rb-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
     </script>
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="Rust বাংলা" />
+    <meta property="og:url" content={canonical} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={og} />
     <meta property="og:locale" content="bn_BD" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={og} />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" />

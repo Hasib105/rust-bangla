@@ -13,7 +13,12 @@ export function authOptions() {
     socialProviders: {
       github: { clientId: env('GITHUB_CLIENT_ID') ?? '', clientSecret: env('GITHUB_CLIENT_SECRET') ?? '' },
     },
-    session: { expiresIn: 60 * 60 * 24 * 60, updateAge: 60 * 60 * 24 }, // 60 days, refreshed daily
+    session: {
+      expiresIn: 60 * 60 * 24 * 60, // 60 days
+      updateAge: 60 * 60 * 24, // refreshed at most daily
+      // signed cookie copy of the session: most requests skip the session DB lookup
+      cookieCache: { enabled: true, maxAge: 10 * 60 },
+    },
     telemetry: { enabled: false },
   };
 }

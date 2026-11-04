@@ -29,6 +29,34 @@ await pool.query(`
     "updatedAt" timestamptz not null default now()
   );
   create index if not exists progress_xp_idx on progress (xp desc);
+
+  -- one row per learner per lesson: best score, stars, how many times played
+  create table if not exists lesson_progress (
+    "userId" text not null references "user"(id) on delete cascade,
+    "lessonKey" text not null,
+    best integer not null,
+    total integer not null,
+    stars integer not null,
+    attempts integer not null default 1,
+    "firstDoneAt" timestamptz not null default now(),
+    "lastAt" timestamptz not null default now(),
+    primary key ("userId", "lessonKey")
+  );
+  create index if not exists lesson_progress_lesson_idx on lesson_progress ("lessonKey");
+
+  -- every finished lesson / challenge / exam (history for stats)
+  create table if not exists attempts (
+    id bigserial primary key,
+    "userId" text not null references "user"(id) on delete cascade,
+    kind text not null,            -- 'lesson' | 'challenge' | 'exam'
+    ref text not null,             -- 'rust/ownership' | 'rust:2' | 'rust'
+    mode text,                     -- 'play' | 'quiz' (lessons only)
+    score integer not null,
+    total integer not null,
+    "createdAt" timestamptz not null default now()
+  );
+  create index if not exists attempts_user_idx on attempts ("userId", "createdAt" desc);
+  create index if not exists attempts_ref_idx on attempts (ref);
 `);
 console.log('[migrate] done');
 await pool.end();

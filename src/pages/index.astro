@@ -12,8 +12,14 @@ const cards = await Promise.all(
   }),
 );
 const rust = cards.find((c) => c.id === 'rust')!;
+const siteUrl = new URL(base, Astro.site).href;
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Rust বাংলা', url: siteUrl, inLanguage: 'bn' },
+  { '@context': 'https://schema.org', '@type': 'EducationalOrganization', name: 'Rust বাংলা', url: siteUrl,
+    logo: new URL(base + 'logo-mark-256.png', Astro.site).href, sameAs: ['https://www.youtube.com/@RustBangla'] },
+];
 ---
-<Base nav="courses">
+<Base nav="courses" jsonLd={jsonLd}>
   <section class="hero">
     <div class="wrap">
       <div>
