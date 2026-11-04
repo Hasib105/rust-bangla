@@ -1,0 +1,110 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "function-এর parameter-এর type লেখা ঐচ্ছিক, compiler নিজেই বুঝে নেয়।",
+      "answer": false,
+      "explain": "function-এর parameter আর return type সবসময় স্পষ্ট করে লিখতে হয়। শুধু ভেতরের variable-এর type compiler আন্দাজ করে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn double(n: i32) -> i32 {\n    n * 2\n}\n\nfn main() {\n    println!(\"{}\", double(4));\n}",
+      "options": [
+        "8",
+        "4",
+        "double",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "শেষ লাইন `n * 2`-তে `;` নেই, তাই সেটাই return হয়। `double(4)` তাই ৮।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে সমস্যা? compiler যে লাইন দেখায় বা যেখানে ভুলটা আছে, যেকোনোটায় ট্যাপ করো।",
+      "code": "fn add(a: i32, b: i32) -> i32 {\n    a + b;\n}\n\nfn main() {\n    println!(\"{}\", add(1, 2));\n}",
+      "answer": [
+        1,
+        2
+      ],
+      "explain": "function-এর signature বলেছে `-> i32`, কিন্তু `a + b;`-এ `;` থাকায় কিছুই return হচ্ছে না। compiler ১ নম্বর লাইনের `i32`-তে দেখায়: E0308, expected `i32`, found `()`। ঠিক করতে `;` মুছে দাও।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let y = {\n        let a = 2;\n        a + 1\n    };\n    println!(\"{y}\");\n}",
+      "options": [
+        "3",
+        "2",
+        "()",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "block-এর শেষ লাইন `a + 1`-এ `;` নেই, তাই ওটাই block-এর মান। `y` হয় ৩।"
+    },
+    {
+      "type": "fill",
+      "q": "return type বোঝাতে ফাঁকা জায়গায় কী বসবে?",
+      "code": "fn square(n: i32) ___ i32 {\n    n * n\n}",
+      "answer": [
+        "->"
+      ],
+      "explain": "`->`-এর পরে return type লিখতে হয়। এটা না থাকলে function খালি `()` return করে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn sign(n: i32) -> i32 {\n    if n < 0 {\n        return -1;\n    }\n    1\n}\n\nfn main() {\n    println!(\"{} {}\", sign(-5), sign(5));\n}",
+      "options": [
+        "-1 1",
+        "1 1",
+        "-1 -1",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`sign(-5)`-এ শর্ত সত্য, তাই মাঝপথে `return -1`। `sign(5)`-এ শর্ত মেলে না, তাই শেষ লাইনের `1` ফেরত আসে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`let x = 5;` একটা expression, যা মান তৈরি করে।",
+      "answer": false,
+      "explain": "`let` একটা statement। statement কাজ করে কিন্তু মান দেয় না, আর `5 + 1`-এর মতো expression মান তৈরি করে।"
+    },
+    {
+      "type": "order",
+      "q": "`area` function-এর লাইনগুলো ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "fn area(w: i32, h: i32) -> i32 {",
+        "    let a = w * h;",
+        "    a",
+        "}"
+      ],
+      "explain": "আগে signature, তারপর ভেতরের হিসাব, তারপর `;` ছাড়া শেষ expression `a`, আর শেষে `}`।"
+    },
+    {
+      "type": "choice",
+      "q": "যে function কিছু return করার কথা লেখে না, সে আসলে কী return করে?",
+      "options": [
+        "`()`",
+        "`void`",
+        "`null`",
+        "`0`"
+      ],
+      "answer": 0,
+      "explain": "Rust-এ এর নাম unit type, লেখা হয় `()`। এটা খালি tuple, যার কোনো মান নেই।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn step(n: i32) -> i32 {\n    let m = n + 1;\n    m * 2\n}\n\nfn main() {\n    let a = step(1);\n    let b = step(a);\n    println!(\"{a} {b}\");\n}",
+      "options": [
+        "4 10",
+        "4 8",
+        "2 6",
+        "4 4"
+      ],
+      "answer": 0,
+      "explain": "`step(1)`: m = 2, ফল 4। তারপর `step(4)`: m = 5, ফল 10।"
+    }
+  ]
+}

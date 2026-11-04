@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "string literal `\"hello\"`-এর type হলো `String`।",
+      "answer": false,
+      "explain": "literal-এর type `&str`, মানে কোথাও সংরক্ষিত text-এর ধার-করা view। `String` বানাতে `String::from` লাগে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let s = String::from(\"hello world\");\n    println!(\"{}\", &s[6..]);\n}",
+      "options": [
+        "world",
+        "hello",
+        "o world",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`&s[6..]` মানে index ৬ থেকে শেষ পর্যন্ত। `hello ` ৬ byte, তাই বাকিটা `world`।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let s = \"abcdef\";\n    println!(\"{}\", &s[1..3]);\n}",
+      "options": [
+        "bc",
+        "bcd",
+        "abc",
+        "cd"
+      ],
+      "answer": 0,
+      "explain": "`1..3` মানে index ১ থেকে ৩-এর **আগ** পর্যন্ত, অর্থাৎ ১ আর ২। এখানে `b` আর `c`।"
+    },
+    {
+      "type": "fill",
+      "q": "function যাতে `String` আর literal দুটোই নিতে পারে, তার জন্য parameter-এর type কী?",
+      "code": "fn count(s: ___) -> usize {\n    s.len()\n}",
+      "answer": [
+        "&str"
+      ],
+      "explain": "`&str` নিলে `&String` পাঠালেও Rust নিজে `&str`-এ বদলে নেয়। তাই `&str` সবচেয়ে নমনীয়।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let mut s = String::from(\"hello world\");\n    let w = &s[..5];\n    s.push('!');\n    println!(\"{w}\");\n}",
+      "answer": 4,
+      "explain": "`w` একটা `&` borrow, আর পরে ব্যবহার হচ্ছে। লাইন ৪-এ `push` চায় `&mut`, তাই E0502 আসে।"
+    },
+    {
+      "type": "order",
+      "q": "array-র একটা অংশ নিয়ে সেটা print করার কোড সাজাও।",
+      "lines": [
+        "let a = [10, 20, 30, 40];",
+        "let part = &a[1..3];",
+        "let n = part.len();",
+        "println!(\"{:?} {}\", part, n);"
+      ],
+      "explain": "আগে array, তারপর তার slice, তারপর slice-এর দৈর্ঘ্য। সব হিসাব শেষে print।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`&s[a..b]` heap-এ নতুন একটা String কপি করে বানায়।",
+      "answer": false,
+      "explain": "slice কোনো কপি করে না। এটা মূল ডেটার একটা অংশের দিকে তাকিয়ে থাকে (একটা start আর length)।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn sum(nums: &[i32]) -> i32 {\n    let mut total = 0;\n    for n in nums {\n        total += n;\n    }\n    total\n}\n\nfn main() {\n    let a = [1, 2, 3, 4];\n    println!(\"{}\", sum(&a[2..]));\n}",
+      "options": [
+        "7",
+        "10",
+        "3",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`&a[2..]` হলো `[3, 4]`, যোগ করলে ৭।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন signature-টা সবচেয়ে বেশি রকম argument নিতে পারে?",
+      "options": [
+        "`fn f(s: &str)`",
+        "`fn f(s: &String)`",
+        "`fn f(s: String)`",
+        "`fn f(s: &mut String)`"
+      ],
+      "answer": 0,
+      "explain": "`&str` literal, `String`-এর borrow আর slice, সবই নেয়। বাকিগুলো নির্দিষ্ট ধরনের।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn first_word(s: &str) -> &str {\n    for (i, ch) in s.char_indices() {\n        if ch == ' ' {\n            return &s[..i];\n        }\n    }\n    s\n}\n\nfn main() {\n    let t = String::from(\"  hi there\");\n    println!(\"[{}]\", first_word(&t));\n}",
+      "options": [
+        "[]",
+        "[hi]",
+        "[  hi]",
+        "[there]"
+      ],
+      "answer": 0,
+      "explain": "প্রথম character-ই space (index ০)। তাই `&s[..0]` অর্থাৎ খালি slice ফেরত আসে। `split_whitespace`-এর মতো trim করে না।"
+    }
+  ]
+}

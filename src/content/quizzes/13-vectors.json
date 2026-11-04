@@ -1,0 +1,84 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`Vec` চাইলে প্রোগ্রাম চলার সময় বড় হতে পারে, কিন্তু array `[i32; 3]` পারে না।",
+      "answer": true,
+      "explain": "array-র size type-এর অংশ, compile-এর সময়েই ঠিক। Vec heap-এ থাকে বলে push করলে বাড়তে পারে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let mut v = vec![1, 2];\n    v.push(3);\n    let x = v.pop();\n    println!(\"{:?} {}\", x, v.len());\n}",
+      "options": ["None 2", "Some(3) 2", "3 2", "Some(3) 3"],
+      "answer": 1,
+      "explain": "pop শেষ element সরিয়ে `Option` হিসেবে দেয়, তাই Some(3)। সরানোর পর Vec-এ থাকে দুটো element।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let v = vec![10, 20, 30];\n    println!(\"{:?}\", v.get(3));\n}",
+      "options": ["panic করবে", "Some(0)", "None", "30"],
+      "answer": 2,
+      "explain": "index ৩ সীমার বাইরে (শেষ index ২)। get panic করে না, ফেরত দেয় None।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কোন method বসালে Vec ছোট থেকে বড় সাজানো হবে?",
+      "code": "let mut v = vec![3, 1, 2];\nv.___();\nprintln!(\"{:?}\", v);",
+      "answer": [
+        "sort"
+      ],
+      "explain": "sort() Vec-কে জায়গাতেই (in place) ছোট থেকে বড় সাজায়। তাই `mut` লাগে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut v = vec![2, 2, 1, 2];\n    v.dedup();\n    println!(\"{:?}\", v);\n}",
+      "options": ["[2, 1]", "[1, 2]", "[2, 2, 1, 2]", "[2, 1, 2]"],
+      "answer": 3,
+      "explain": "dedup শুধু পাশাপাশি থাকা একই মান মোছে। শুরুর দুটো 2 এক হয়ে যায়, কিন্তু শেষের 2 আলাদা জায়গায় বলে থেকে যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut v = vec![1, 2, 3, 4, 5, 6];\n    v.retain(|n| *n % 2 == 0);\n    println!(\"{:?}\", v);\n}",
+      "options": ["[]", "[2, 4, 6]", "[1, 3, 5]", "[1, 2, 3, 4, 5, 6]"],
+      "answer": 1,
+      "explain": "retain শুধু সেই element রাখে যাদের জন্য শর্ত সত্য। এখানে শর্ত হলো জোড় সংখ্যা।"
+    },
+    {
+      "type": "order",
+      "q": "একটা Vec বানিয়ে সাজিয়ে print করার ঠিক ক্রম বসাও।",
+      "lines": [
+        "`let mut v = Vec::new();`",
+        "`v.push(3);`",
+        "`v.push(1);`",
+        "`v.sort();`",
+        "`println!(\"{:?}\", v);`"
+      ],
+      "explain": "আগে খালি mut Vec বানাতে হয়, মান ঢোকাতে হয়, তারপর সাজানো, সবশেষে print।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`v[100]` লিখলে Vec-এ মাত্র ৩টা element থাকলে প্রোগ্রাম panic করে।",
+      "answer": true,
+      "explain": "index করা সীমার বাইরে গেলে Rust runtime-এ panic করে। C-র মতো garbage পড়ে না। নিরাপদ উপায় হলো `v.get(100)`।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let mut v = vec![1, 2, 3];\n    let first = &v[0];\n    v.push(4);\n    println!(\"{first}\");\n}",
+      "answer": 4,
+      "explain": "লাইন ৪-এ push করতে mutable borrow লাগে, কিন্তু `first` তখনও বেঁচে আছে (লাইন ৫-এ ব্যবহার হবে)। তাই E0502।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn main() {\n    let mut v = vec![4, 1, 4, 2, 1];\n    v.sort();\n    v.dedup();\n    for x in &mut v {\n        *x += 1;\n    }\n    v.retain(|n| *n != 3);\n    println!(\"{:?}\", v);\n}",
+      "options": ["[5, 2]", "[2, 5, 6]", "[2, 5]", "[2, 3, 5]"],
+      "answer": 2,
+      "explain": "sort: [1,1,2,4,4], dedup: [1,2,4], প্রতিটায় ১ যোগ: [2,3,5], তারপর 3 বাদ: [2,5]।"
+    }
+  ]
+}

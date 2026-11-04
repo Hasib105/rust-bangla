@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এ `if 1 { ... }` লিখলে সংখ্যা ১ কে true ধরা হয়।",
+      "answer": false,
+      "explain": "`if`-এর condition অবশ্যই `bool`। সংখ্যা দিলে E0308: mismatched types আসে। `if x == 1` লিখতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut s = 0;\n    for i in 1..4 {\n        s += i;\n    }\n    println!(\"{s}\");\n}",
+      "options": [
+        "6",
+        "10",
+        "9",
+        "4"
+      ],
+      "answer": 0,
+      "explain": "`1..4` শেষ সংখ্যা ৪ বাদ দেয়, তাই i হয় ১, ২, ৩। যোগফল ৬।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut s = 0;\n    for i in 1..=4 {\n        s += i;\n    }\n    println!(\"{s}\");\n}",
+      "options": [
+        "10",
+        "6",
+        "15",
+        "4"
+      ],
+      "answer": 0,
+      "explain": "`1..=4` শেষ সংখ্যা ৪-ও ধরে। তাই 1 + 2 + 3 + 4 = ১০।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let n = 5;\n    if n {\n        println!(\"yes\");\n    }\n}",
+      "answer": 3,
+      "explain": "লাইন ৩-এ `n` একটা সংখ্যা, `bool` নয়। compiler E0308 দেয়। `if n != 0` লিখলে ঠিক হয়।"
+    },
+    {
+      "type": "fill",
+      "q": "১ থেকে ৩ উল্টো দিকে চালাতে ফাঁকা জায়গায় কোন method বসবে?",
+      "code": "for i in (1..=3).___() {\n    print!(\"{i}\");\n}",
+      "answer": [
+        "rev"
+      ],
+      "explain": "`.rev()` range-কে উল্টো দিক থেকে চালায়, তাই `321` print হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let mut n = 0;\n    let r = loop {\n        n += 2;\n        if n > 5 {\n            break n;\n        }\n    };\n    println!(\"{r}\");\n}",
+      "options": [
+        "6",
+        "5",
+        "2",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "n হয় ২, ৪, ৬। ৬ > ৫ হলে `break n` loop থামায় আর ৬ মান হিসেবে `r`-এ যায়।"
+    },
+    {
+      "type": "order",
+      "q": "এই লাইনগুলো ঠিক ক্রমে সাজাও (ফল 0 print হবে)।",
+      "lines": [
+        "let mut n = 3;",
+        "while n > 0 {",
+        "    n -= 1;",
+        "}",
+        "println!(\"{n}\");"
+      ],
+      "explain": "n শুরুতে ৩। `while` প্রতিবার ১ কমায় যতক্ষণ না 0 হয়। loop শেষ হলে print।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`break`-এর সঙ্গে মান দিয়ে `loop` থেকে সেই মান বের করা যায়।",
+      "answer": true,
+      "explain": "`loop` একটা expression। `break value;` দিলে সেই মানই পুরো `loop`-এর মান হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "`for i in 1..4` কতবার চলবে?",
+      "options": [
+        "৩ বার",
+        "৪ বার",
+        "৫ বার",
+        "একবারও না"
+      ],
+      "answer": 0,
+      "explain": "`1..4`-এ শেষ সংখ্যা বাদ যায়, তাই মান ১, ২, ৩। চারবার চালাতে `1..=4` লিখতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn main() {\n    let mut count = 0;\n    'outer: for i in 0..3 {\n        for j in 0..3 {\n            if i + j == 3 {\n                break 'outer;\n            }\n            count += 1;\n        }\n    }\n    println!(\"{count}\");\n}",
+      "options": [
+        "5",
+        "6",
+        "3",
+        "9"
+      ],
+      "answer": 0,
+      "explain": "i = 0-তে j তিনবার চলে (count = 3)। i = 1-এ j = 0, 1 দুবার (count = 5), j = 2-তে `1 + 2 == 3` হয়ে `break 'outer` পুরো loop থামায়। সাধারণ break হলে ফল ৬ হতো।"
+    }
+  ]
+}

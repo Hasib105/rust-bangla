@@ -1,0 +1,19 @@
+{
+  "name": "rust-bangla",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check:content": "node scripts/check-content.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.8",
+    "astro": "^7.2.10",
+    "sharp": "^0.35.3",
+    "shiki": "^4.6.0"
+  }
+}

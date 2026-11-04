@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`println!`-এর শেষের `!` বলে দেয় যে এটা একটা macro, সাধারণ function নয়।",
+      "answer": true,
+      "explain": "`!` থাকলেই macro। macro compile-এর সময় কোড বানায়, তাই `{}`-এর সংখ্যা ঠিক আছে কিনা আগেই যাচাই করতে পারে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let x = 2.0 / 3.0;\n    println!(\"{:.2}\", x);\n}",
+      "options": [
+        "0.67",
+        "0.66",
+        "0.6666",
+        "0.70"
+      ],
+      "answer": 0,
+      "explain": "`{:.2}` দশমিকের পরে ২ ঘর দেখায়, আর শেষ অঙ্ক গোল (round) করে। 0.666... হয়ে যায় 0.67।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    println!(\"[{:>4}]\", 7);\n}",
+      "options": [
+        "[7   ]",
+        "[   7]",
+        "[0007]",
+        "[ 7  ]"
+      ],
+      "answer": 1,
+      "explain": "`>` মানে ডানে সরানো। ৪ ঘরের জায়গায় `7` ডান দিকে বসে, বাঁয়ে ৩টা ফাঁকা থাকে।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let name = \"Ali\";\n    println!(\"{} {}\", name);\n}",
+      "answer": 3,
+      "explain": "লাইন ৩-এ দুটো `{}` আছে, কিন্তু argument মাত্র একটা। compiler গুনে দেখে ভুলটা আগেই ধরে ফেলে।"
+    },
+    {
+      "type": "fill",
+      "q": "vector-এর ভেতরের মান দেখতে ফাঁকা জায়গায় কী বসবে?",
+      "code": "let v = vec![1, 2];\nprintln!(\"{___}\", v);",
+      "answer": [
+        ":?"
+      ],
+      "explain": "`{:?}` হলো debug format। vector, tuple-এর মতো type সাধারণ `{}` দিয়ে দেখানো যায় না।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let a = 5;\n    println!(\"{a} {}\", a + 1);\n}",
+      "options": [
+        "5 6",
+        "5 5",
+        "6 6",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`{a}` variable-এর নাম থেকে মান নেয়। আর ফাঁকা `{}` পরের argument `a + 1` নেয়, যা ৬।"
+    },
+    {
+      "type": "order",
+      "q": "এই program-এর লাইনগুলো ঠিক ক্রমে সাজাও, যাতে `ABC` print হয়।",
+      "lines": [
+        "fn main() {",
+        "    print!(\"A\");",
+        "    print!(\"B\");",
+        "    println!(\"C\");",
+        "}"
+      ],
+      "explain": "`print!` নতুন লাইনে যায় না, তাই A আর B একই লাইনে থাকে। শেষে `println!` লাইন শেষ করে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`print!` লেখার পর নিজে থেকে নতুন লাইনে চলে যায়।",
+      "answer": false,
+      "explain": "নতুন লাইনে যায় `println!`। `print!` কোনো line break দেয় না।"
+    },
+    {
+      "type": "choice",
+      "q": "`println!(\"{{}}\");` কী print করবে?",
+      "options": [
+        "{}",
+        "{{}}",
+        "compile error",
+        "কিছুই না"
+      ],
+      "answer": 0,
+      "explain": "`{{` আর `}}` লিখলে আসল `{` ও `}` print হয়। একটা `{}` লিখলে সেটা ফাঁকা জায়গা ধরা হতো।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn main() {\n    print!(\"{:?} \", \"a\");\n    print!(\"{:05} \", 42);\n    println!(\"{}\", (1, 2).0);\n}",
+      "options": [
+        "\"a\" 00042 1",
+        "a 42 1",
+        "\"a\" 00042 2",
+        "a 00042 1"
+      ],
+      "answer": 0,
+      "explain": "`{:?}` লেখাকে quote সহ দেখায়, `{:05}` পাঁচ ঘর শূন্য দিয়ে ভরে, আর `(1, 2).0` হলো tuple-এর প্রথম মান ১।"
+    }
+  ]
+}

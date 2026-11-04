@@ -1,0 +1,95 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCourse, getCards } from '../../data/course';
+
+export async function getStaticPaths() {
+  const course = await getCourse();
+  return course.map((p) => ({ params: { part: String(p.id) } }));
+}
+const course = await getCourse();
+const part = course.find((p) => String(p.id) === Astro.params.part)!;
+const pool = (await Promise.all(part.lessons.map((l) => getCards(l.id, l.short)))).flat();
+const nextPart = course.find((p) => p.id === part.id + 1);
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const bnN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+---
+<Base title={`বস লড়াই: পর্ব ${bnN(part.id)}`} description={`${part.title} পর্বের সব পাঠ থেকে ১০টা প্রশ্ন। ৭টা ঠিক করলে বস হারবে।`}>
+  <section class="narrow" style="text-align:center;padding:40px 0">
+    <div style="font-size:90px;line-height:1">🐉</div>
+    <h1 class="page-title">পর্ব {bnN(part.id)}-এর বস লড়াই</h1>
+    <p class="muted" style="font-size:18px">{part.icon} {part.title}: {part.subtitle}</p>
+    <div class="panel" style="text-align:left;margin:24px 0">
+      <ul style="margin:0">
+        <li>এই পর্বের {bnN(part.lessons.length)}টা পাঠ থেকে এলোমেলো <b>১০টা প্রশ্ন</b> আসবে</li>
+        <li>প্রতিটা প্রশ্ন একবারই আসবে, দ্বিতীয় সুযোগ নেই</li>
+        <li><b>৭/১০</b> বা তার বেশি পেলে বস হারবে, প্রথমবার জিতলে <b>+৫০ XP</b> 🏆</li>
+      </ul>
+    </div>
+    <p class="muted" id="best"></p>
+    <button class="btn" id="fight" style="font-size:20px;padding:14px 34px">⚔️ লড়াই শুরু করো</button>
+    <p style="margin-top:18px"><a href={base + '#board'}>← রোডম্যাপে ফিরে যাও</a></p>
+  </section>
+  <div class="quiz-layer" id="layer" hidden></div>
+  <script is:inline type="application/json" id="boss-data" set:html={JSON.stringify({ part: part.id, pool, home: base, next: nextPart ? base + 'learn/' + nextPart.lessons[0].slug + '/' : base + 'exam/' }).replace(/</g, '\\u003c')} />
+</Base>
+
+<script>
+  import { runQuiz, md } from '../../scripts/quiz';
+  import { load, save, gain, bn } from '../../scripts/store';
+  import { confetti, sound, announceBadges } from '../../scripts/ui';
+
+  const data = JSON.parse(document.getElementById('boss-data')!.textContent!);
+  const layer = document.getElementById('layer')!;
+  const key = String(data.part);
+  const showBest = () => {
+    const b = load().bosses[key];
+    document.getElementById('best')!.textContent = b === undefined ? '' : `তোমার সেরা স্কোর: ${bn(b)}/১০ ${b >= 7 ? '🏆 (বস হেরেছে!)' : ''}`;
+  };
+  showBest();
+
+  function pick() {
+    const a = [...data.pool];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a.slice(0, 10);
+  }
+
+  function start() {
+    layer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    runQuiz(layer, pick(), {
+      requeue: false,
+      onClose: () => { if (confirm('লড়াই ছেড়ে পালাবে? 🐉')) { layer.hidden = true; document.body.style.overflow = ''; } },
+      onFinish: ({ firstTry, total, missed }) => {
+        const s = load();
+        const old = s.bosses[key];
+        const won = firstTry >= 7;
+        const firstWin = won && !(old !== undefined && old >= 7);
+        s.bosses[key] = Math.max(firstTry, old ?? 0);
+        const xp = firstWin ? 50 : 0;
+        const nb = gain(s, xp);
+        save(s);
+        if (won) { sound('win'); confetti(160); } else sound('bad');
+        announceBadges(nb);
+        layer.innerHTML = `<div class="qz"><div class="result">
+          <div class="big">${won ? '🏆' : '🐉'}</div>
+          <h2>${won ? 'বস হেরে গেছে! তুমি জিতেছো!' : 'এবার বস জিতলো...'}</h2>
+          <p class="muted">${won ? 'এই পর্বের ধারণাগুলো তুমি ভালোভাবে বুঝেছো।' : 'ভুল প্রশ্নগুলোর পাঠ আরেকবার দেখে আবার লড়াই করো। ৭টা ঠিক লাগবে।'}</p>
+          <div class="grid">
+            <div><b>${bn(firstTry)}/${bn(total)}</b><small>ঠিক উত্তর</small></div>
+            <div><b>⚡ +${bn(xp)}</b><small>XP</small></div>
+            <div><b>${bn(s.bosses[key])}/১০</b><small>সেরা স্কোর</small></div>
+          </div>
+          ${missed.length ? `<div class="missed panel"><h3>📝 যেগুলো ভুল হয়েছে</h3><ul>${missed.map((c) => `<li><b>${md(c.q)}</b> <small>(${md(c.from || '')})</small><br>${md(c.explain)}</li>`).join('')}</ul></div>` : ''}
+          <div class="acts">
+            ${won ? `<a class="btn" href="${data.next}">পরের পর্বে যাও →</a>` : ''}
+            <button class="btn ${won ? 'ghost' : ''}" id="again">⚔️ আবার লড়াই করো</button>
+            <a class="btn ghost" href="${data.home}#board">🗺️ রোডম্যাপ</a>
+          </div></div></div>`;
+        layer.scrollTop = 0;
+        document.getElementById('again')!.onclick = start;
+        showBest();
+      },
+    });
+  }
+  document.getElementById('fight')!.addEventListener('click', start);
+</script>

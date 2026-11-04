@@ -1,0 +1,80 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`v.iter().map(|n| n * 2);` লিখে `;` দিলেই প্রতিটা item-এ কাজটা সঙ্গে সঙ্গে হয়ে যায়।",
+      "answer": false,
+      "explain": "iterator adapter lazy। collect, sum বা for লুপের মতো কিছু next() না ডাকলে map-এর closure একবারও চলে না।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let v = vec![3, 4, 5];\n    let s: i32 = v.iter().map(|n| n + 1).sum();\n    println!(\"{s}\");\n}",
+      "options": ["15", "12", "9", "compile error"],
+      "answer": 0,
+      "explain": "map প্রতিটাতে ১ যোগ করে: 4, 5, 6। sum সেগুলো যোগ করলে 15।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let v = vec![1, 2, 3, 4, 5, 6];\n    let r: Vec<i32> = v.into_iter().filter(|n| n % 3 != 0).collect();\n    println!(\"{r:?}\");\n}",
+      "options": ["`[1, 2, 4, 5]`", "`[3, 6]`", "`[1, 2, 3, 4, 5]`", "`[2, 4, 6]`"],
+      "answer": 0,
+      "explain": "filter সেই item রাখে যার জন্য closure true দেয়। 3 আর 6 তিন দিয়ে ভাগ যায়, তাই বাদ পড়ে।"
+    },
+    {
+      "type": "fill",
+      "q": "iterator-এর মূল method কোনটা, যেটা `Some(item)` বা `None` দেয়?",
+      "code": "let v = vec![7];\nlet mut it = v.iter();\nlet first = it.___();\nprintln!(\"{first:?}\");",
+      "answer": ["next"],
+      "explain": "next() হলো Iterator trait-এর একমাত্র আবশ্যিক method। for লুপ ভেতরে ভেতরে এটাই বারবার ডাকে।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন method Vec-এর item-গুলো **বদলানোর** জন্য `&mut T` দেয়?",
+      "options": ["`iter()`", "`iter_mut()`", "`into_iter()`", "`enumerate()`"],
+      "answer": 1,
+      "explain": "iter() শুধু &T দেয় (পড়ার জন্য), into_iter() মালিকানা দিয়ে দেয়। জায়গায় বদলাতে চাইলে iter_mut()।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let v = vec![1, 2, 3];\n    let total: i32 = v.into_iter().sum();\n    println!(\"{total}\");\n    println!(\"{}\", v.len());\n}",
+      "answer": 5,
+      "explain": "লাইন ৩-এর into_iter() Vec-এর মালিকানা খরচ করে ফেলেছে। তাই লাইন ৫-এ v.len() ডাকলে E0382: borrow of moved value আসে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    let a = [1, 2, 3];\n    let b = ['x', 'y'];\n    let n = a.iter().zip(b.iter()).count();\n    println!(\"{n}\");\n}",
+      "options": ["2", "3", "5", "6"],
+      "answer": 0,
+      "explain": "zip দুটোর মধ্যে যেটা আগে শেষ হয় সেখানেই থামে। b-তে মাত্র ২টা item, তাই ২ জোড়া হয়।"
+    },
+    {
+      "type": "order",
+      "q": "১ থেকে ৫-এর মধ্যে জোড় সংখ্যার বর্গের Vec বানানোর pipeline সাজাও।",
+      "lines": [
+        "`let r: Vec<i32> = (1..=5)`",
+        "`    .filter(|n| n % 2 == 0)`",
+        "`    .map(|n| n * n)`",
+        "`    .collect();`"
+      ],
+      "explain": "শুরু হয় source iterator দিয়ে, তারপর adapter (filter, map), আর শেষে collect যেটা সত্যিকারের কাজ চালায়।"
+    },
+    {
+      "type": "truefalse",
+      "q": "নিজের struct-এর জন্য শুধু `next()` লিখে `Iterator` impl করলেই `map`, `filter`, `sum` ব্যবহার করা যায়।",
+      "answer": true,
+      "explain": "বাকি সব method trait-এর default method, যেগুলো next()-এর ওপর দাঁড়িয়ে। তাই একটা method লিখলেই পুরো পরিবার পাওয়া যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn main() {\n    let v = vec![\"a\", \"bb\", \"ccc\", \"dddd\"];\n    let r = v\n        .iter()\n        .enumerate()\n        .filter(|(i, _)| i % 2 == 1)\n        .map(|(_, s)| s.len())\n        .fold(0, |acc, n| acc * 10 + n);\n    println!(\"{r}\");\n}",
+      "options": ["24", "13", "42", "6"],
+      "answer": 0,
+      "explain": "index 1 আর 3 রাখা হয়: bb (দৈর্ঘ্য 2) আর dddd (দৈর্ঘ্য 4)। fold: 0*10+2 = 2, তারপর 2*10+4 = 24।"
+    }
+  ]
+}

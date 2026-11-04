@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`fn show<T>(x: T)`-এ `T` মানে যেকোনো একটা type।",
+      "answer": true,
+      "explain": "T হলো type-এর জায়গায় বসানো নাম। কলের সময় compiler দেখে নেয় T আসলে i32, String না অন্য কিছু।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn largest<T: PartialOrd + Copy>(items: &[T]) -> T {\n    let mut max = items[0];\n    for &item in items {\n        if item > max {\n            max = item;\n        }\n    }\n    max\n}\n\nfn main() {\n    println!(\"{}\", largest(&[4, 11, 7]));\n}",
+      "options": [
+        "compile error",
+        "11",
+        "4",
+        "7"
+      ],
+      "answer": 1,
+      "explain": "function প্রতিটা item-কে এখন পর্যন্ত পাওয়া সবচেয়ে বড়টার সাথে তুলনা করে। সবশেষে 11 থাকে।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "struct Point<T> {\n    x: T,\n    y: T,\n}\n\nfn main() {\n    let p = Point { x: 1, y: 2.5 };\n    println!(\"{}\", p.x);\n}",
+      "answer": 7,
+      "explain": "Point<T>-তে x আর y-এর type একই T হতে হয়। 1 হলো integer আর 2.5 হলো float, তাই লাইন ৭-এ mismatched types error আসে।"
+    },
+    {
+      "type": "fill",
+      "q": "ফাঁকা জায়গায় কী বসালে `largest` compile হবে? (trait-এর নাম লেখো)",
+      "code": "fn largest<T: ___ + Copy>(items: &[T]) -> T {\n    let mut max = items[0];\n    for &item in items {\n        if item > max {\n            max = item;\n        }\n    }\n    max\n}",
+      "answer": [
+        "PartialOrd"
+      ],
+      "explain": "`>` দিয়ে তুলনা করতে হলে T-কে PartialOrd মানতে হবে। bound না দিলে compiler জানে না T তুলনা করা যায় কি না।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "struct Wrapper<T> {\n    value: T,\n}\n\nimpl<T> Wrapper<T> {\n    fn get(&self) -> &T {\n        &self.value\n    }\n}\n\nfn main() {\n    let a = Wrapper { value: \"hi\" };\n    let b = Wrapper { value: 42 };\n    println!(\"{} {}\", a.get(), b.get());\n}",
+      "options": [
+        "hi 42",
+        "42 hi",
+        "compile error: two types",
+        "hi hi"
+      ],
+      "answer": 0,
+      "explain": "Wrapper<&str> আর Wrapper<i32> আলাদা আলাদা type, কিন্তু একই generic code থেকে বানানো। get() দুটোতেই চলে।"
+    },
+    {
+      "type": "choice",
+      "q": "Monomorphization মানে কী?",
+      "options": [
+        "T-কে সবসময় i32 ধরে নেওয়া",
+        "compile time-এ প্রতিটা ব্যবহৃত type-এর জন্য generic code-এর আলাদা কপি বানানো",
+        "runtime-এ type দেখে সঠিক function বেছে নেওয়া",
+        "সব generic type-কে একটা Box-এ ভরে রাখা"
+      ],
+      "answer": 1,
+      "explain": "compiler আগেই প্রতিটা type-এর জন্য নির্দিষ্ট কপি বানিয়ে ফেলে। তাই runtime-এ কিছু বেছে নিতে হয় না, আর গতি হাতে লেখা code-এর সমান।"
+    },
+    {
+      "type": "order",
+      "q": "generic struct-এর method বানানোর code-টা ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`struct Pair<T> { a: T, b: T }`",
+        "`impl<T> Pair<T> {`",
+        "`    fn first(&self) -> &T { &self.a }`",
+        "`}`"
+      ],
+      "explain": "আগে generic struct, তারপর impl<T> দিয়ে তার block খোলা, ভেতরে method, শেষে block বন্ধ।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "struct Point<T> {\n    x: T,\n    y: T,\n}\n\nimpl Point<f64> {\n    fn sum(&self) -> f64 {\n        self.x + self.y\n    }\n}\n\nfn main() {\n    let p = Point { x: 1.5, y: 2.0 };\n    println!(\"{}\", p.sum());\n}",
+      "options": [
+        "3",
+        "compile error",
+        "1.52.0",
+        "3.5"
+      ],
+      "answer": 3,
+      "explain": "impl Point<f64> শুধু f64 point-এর জন্য। এখানে p একটা Point<f64>, তাই sum() ডাকা যায় আর 1.5 + 2.0 = 3.5।"
+    },
+    {
+      "type": "truefalse",
+      "q": "Generic function ব্যবহার করলে runtime-এ ধীর হয়, কারণ প্রতিবার type খুঁজে নিতে হয়।",
+      "answer": false,
+      "explain": "type আগেই compile time-এ ঠিক হয়ে যায় (monomorphization)। runtime-এ কোনো বাড়তি খরচ নেই।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "struct Pair<T, U> {\n    left: T,\n    right: U,\n}\n\nimpl<T, U> Pair<T, U> {\n    fn swap(self) -> Pair<U, T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let p = Pair { left: 1, right: \"one\" };\n    let q = p.swap();\n    println!(\"{} {}\", q.left, q.right);\n}",
+      "options": [
+        "one one",
+        "one 1",
+        "1 one",
+        "compile error"
+      ],
+      "answer": 1,
+      "explain": "swap() দুটো field-এর জায়গা বদলে Pair<&str, i32> বানায়। তাই q.left হলো \"one\" আর q.right হলো 1।"
+    }
+  ]
+}

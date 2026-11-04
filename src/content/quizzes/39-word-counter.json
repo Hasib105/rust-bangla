@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`HashMap`-এর ওপর `for` চালালে সবসময় insert করার ক্রমেই element পাওয়া যায়।",
+      "answer": false,
+      "explain": "HashMap-এর ক্রম নির্ধারিত নয় আর প্রতিবার বদলাতে পারে। তাই output ঠিক রাখতে Vec-এ নিয়ে sort করতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "use std::thread;\n\nfn main() {\n    let data = [1, 2, 3, 4, 5];\n    let (left, right) = data.split_at(2);\n    let (a, b) = thread::scope(|s| {\n        let h1 = s.spawn(|| left.iter().sum::<i32>());\n        let h2 = s.spawn(|| right.iter().sum::<i32>());\n        (h1.join().unwrap(), h2.join().unwrap())\n    });\n    println!(\"{a} {b} {}\", a + b);\n}",
+      "options": [
+        "3 12 15",
+        "6 9 15",
+        "15 0 15",
+        "3 12 12"
+      ],
+      "answer": 0,
+      "explain": "split_at(2) বাঁয়ে [1, 2] আর ডানে [3, 4, 5] দেয়। যোগফল 3 আর 12, মোট 15। join-এর ক্রম ঠিক, তাই output এক।"
+    },
+    {
+      "type": "choice",
+      "q": "`thread::scope`-এর thread local variable (যেমন `lines`) সরাসরি borrow করতে পারে। কেন?",
+      "options": [
+        "scope শেষ হওয়ার আগেই সব thread join হয়ে যায়, তাই borrow-এর চেয়ে thread বেশি বাঁচে না",
+        "scope-এ থাকলে borrow checker বন্ধ থাকে",
+        "scoped thread আসলে thread নয়, সাধারণ function call",
+        "Rust তখন data-কে নিজে নিজে clone করে নেয়"
+      ],
+      "answer": 0,
+      "explain": "scope থেকে বের হওয়ার আগে সব thread শেষ হয়, তাই কোনো reference ঝুলে থাকতে পারে না। সাধারণ spawn-এ এই নিশ্চয়তা নেই।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "use std::thread;\n\nfn main() {\n    let lines = vec![\"a b\", \"b c\"];\n    let h = thread::spawn(|| {\n        println!(\"{}\", lines.len());\n    });\n    h.join().unwrap();\n}",
+      "answer": 5,
+      "explain": "thread::spawn-এর closure `lines` borrow করছে, কিন্তু thread main-এর চেয়েও বেশি বাঁচতে পারে। E0373: closure may outlive the current function। thread::scope বা move দিয়ে ঠিক হয়।"
+    },
+    {
+      "type": "fill",
+      "q": "শব্দ গোনার ঐ লাইনে ফাঁকা জায়গায় কোন method বসবে? (key না থাকলে 0 দিয়ে শুরু)",
+      "code": "*map.entry(word).___(0) += 1;",
+      "answer": [
+        "or_insert"
+      ],
+      "explain": "entry(word).or_insert(0) key থাকলে তার মান দেয়, না থাকলে 0 বসিয়ে দেয়। তারপর `+= 1` দিয়ে গোনা হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে? (sort-এর শর্ত দুটো খেয়াল করো)",
+      "code": "fn main() {\n    let mut pairs = vec![(\"x\", 1), (\"y\", 3), (\"a\", 3)];\n    pairs.sort_by(|p, q| q.1.cmp(&p.1).then(p.0.cmp(q.0)));\n    println!(\"{pairs:?}\");\n}",
+      "options": [
+        "[(\"a\", 3), (\"y\", 3), (\"x\", 1)]",
+        "[(\"y\", 3), (\"a\", 3), (\"x\", 1)]",
+        "[(\"x\", 1), (\"a\", 3), (\"y\", 3)]",
+        "[(\"a\", 3), (\"x\", 1), (\"y\", 3)]"
+      ],
+      "answer": 0,
+      "explain": "প্রথমে count বড় থেকে ছোট। y আর a-এর count সমান (3), তাই তখন শব্দের বর্ণানুক্রমে a আগে। সবশেষে x (1)।"
+    },
+    {
+      "type": "order",
+      "q": "multi-thread word counter-এর ধাপগুলো সঠিক ক্রমে সাজাও।",
+      "lines": [
+        "input যাচাই করা (thread সংখ্যা আর text ফাঁকা কি না)",
+        "text-কে লাইন ধরে কয়েক chunk-এ ভাগ করা",
+        "প্রতি chunk-এর জন্য একটা scoped thread, প্রতিটা নিজের HashMap বানায়",
+        "সব thread join করে ছোট map-গুলো একটা বড় map-এ merge করা",
+        "count অনুযায়ী sort করে top-N print করা"
+      ],
+      "explain": "ভাগ করো, আলাদা আলাদা করো, জোড়া দাও। merge শুরুর আগে সব thread-কে join করতে হয়, নইলে ফল অসম্পূর্ণ থাকবে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "প্রতিটা thread যদি নিজের `HashMap` ফেরত দেয়, তাহলে ফলগুলো যোগ করার জন্য `Mutex` লাগবেই।",
+      "answer": false,
+      "explain": "কোনো map একসাথে দুই thread-এ লেখা হয় না। thread শেষ হলে map main thread-এর হাতে আসে, আর main একাই merge করে, তাই lock লাগে না।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে? (শব্দ গোনার ধাপ)",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut map: HashMap<String, usize> = HashMap::new();\n    for w in \"Hi hi! HI.\".split_whitespace() {\n        let w = w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();\n        *map.entry(w).or_insert(0) += 1;\n    }\n    println!(\"{} {:?}\", map.len(), map.get(\"hi\"));\n}",
+      "options": [
+        "1 Some(3)",
+        "3 Some(1)",
+        "3 None",
+        "1 Some(1)"
+      ],
+      "answer": 0,
+      "explain": "\"Hi\", \"hi!\", \"HI.\" তিনটাই চিহ্ন কেটে lowercase করলে \"hi\" হয়। তাই map-এ key একটাই, আর তার count 3।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn main() {\n    let lines: Vec<u32> = (1..=10).collect();\n    let threads = 4;\n    let size = lines.len().div_ceil(threads);\n    let lens: Vec<usize> = lines.chunks(size).map(|c| c.len()).collect();\n    println!(\"{size} {lens:?}\");\n}",
+      "options": [
+        "3 [3, 3, 3, 1]",
+        "2 [2, 2, 2, 2, 2]",
+        "3 [3, 3, 4]",
+        "4 [3, 3, 3, 1]"
+      ],
+      "answer": 0,
+      "explain": "10.div_ceil(4) = 3 (উপরের দিকে round), তাই প্রতি chunk-এ 3 টা করে। 3 + 3 + 3 + 1 = 10, মানে 4 টা chunk হয়, প্রতিটার জন্য একটা thread।"
+    }
+  ]
+}

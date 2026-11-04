@@ -1,0 +1,106 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "struct-এর শুধু একটা field আলাদা করে `mut` করা যায়।",
+      "answer": false,
+      "explain": "Rust-এ mutability পুরো variable-এর। field বদলাতে হলে `let mut` লিখতে হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "struct P {\n    x: i32,\n    y: i32,\n}\n\nimpl P {\n    fn sum(&self) -> i32 {\n        self.x + self.y\n    }\n}\n\nfn main() {\n    let p = P { x: 3, y: 4 };\n    println!(\"{}\", p.sum());\n}",
+      "options": [
+        "7",
+        "12",
+        "34",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`sum(&self)` `self.x + self.y` ফেরত দেয়, মানে `3 + 4 = 7`।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "struct C {\n    n: u32,\n}\n\nfn main() {\n    let c = C { n: 0 };\n    c.n += 1;\n    println!(\"{}\", c.n);\n}",
+      "answer": 7,
+      "explain": "`c` `mut` নয়, তাই লাইন ৭-এ field বদলাতে গেলে E0594 আসে। `let mut c` লিখলে ঠিক হয়ে যায়।"
+    },
+    {
+      "type": "fill",
+      "q": "update syntax দিয়ে বাকি field `a` থেকে নিতে ফাঁকা জায়গায় কী বসবে?",
+      "code": "let b = User { age: 30, ___a };",
+      "answer": [
+        ".."
+      ],
+      "explain": "`..a` লিখলে যে field আলাদা করে দেওয়া হয়নি, সেগুলো `a` থেকে আসে।"
+    },
+    {
+      "type": "choice",
+      "q": "কোন method ডাকতে হলে variable-টা `mut` হতে হবে?",
+      "options": [
+        "`&mut self` নেওয়া method",
+        "`&self` নেওয়া method",
+        "যেকোনো method",
+        "`new` ছাড়া সব method"
+      ],
+      "answer": 0,
+      "explain": "`&mut self` মানে method struct বদলাবে, তাই variable `mut` লাগে। `&self` শুধু পড়ে।"
+    },
+    {
+      "type": "order",
+      "q": "`derive(Debug)` দিয়ে struct বানিয়ে print করার কোড সাজাও।",
+      "lines": [
+        "#[derive(Debug)]",
+        "struct Dog { age: u32 }",
+        "let d = Dog { age: 3 };",
+        "println!(\"{:?}\", d);"
+      ],
+      "explain": "`derive` attribute struct-এর ঠিক আগে বসে। তারপর value বানাতে হয়, তারপর print।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "#[derive(Debug)]\nstruct P {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    println!(\"{:?}\", P { x: 1, y: 2 });\n}",
+      "options": [
+        "P { x: 1, y: 2 }",
+        "P(1, 2)",
+        "{x: 1, y: 2}",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`derive(Debug)` struct-এর নাম আর field-এর নামসহ লেখে: `P { x: 1, y: 2 }`।"
+    },
+    {
+      "type": "truefalse",
+      "q": "`struct Meters(f64);` থেকে বানানো value-র field পড়তে `.0` লিখতে হয়।",
+      "answer": true,
+      "explain": "tuple struct-এর field-এর নাম নেই, তাই `.0`, `.1` এভাবে সংখ্যা দিয়ে পড়া হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "`Rect::new(3, 4)` চলে, কিন্তু `r.new(3, 4)` চলে না কেন?",
+      "options": [
+        "`new`-এ `self` নেই, তাই এটা `Type::` দিয়ে ডাকতে হয়",
+        "`new` একটা private word",
+        "method-এ `.` ব্যবহার করা যায় না",
+        "`new` শুধু `u32` নেয়"
+      ],
+      "answer": 0,
+      "explain": "`self` ছাড়া function হলো associated function। এটা কোনো value-র উপর নয়, type-এর উপর ডাকা হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "struct Acc {\n    total: u32,\n}\n\nimpl Acc {\n    fn new() -> Self {\n        Self { total: 0 }\n    }\n    fn add(&mut self, n: u32) {\n        self.total += n;\n    }\n    fn doubled(&self) -> u32 {\n        self.total * 2\n    }\n}\n\nfn main() {\n    let mut a = Acc::new();\n    a.add(3);\n    a.add(4);\n    println!(\"{} {}\", a.total, a.doubled());\n}",
+      "options": [
+        "7 14",
+        "7 7",
+        "14 7",
+        "compile error: a is not mut"
+      ],
+      "answer": 0,
+      "explain": "`add(3)`, `add(4)` মিলে `total = 7`। `doubled(&self)` শুধু পড়ে `14` ফেরত দেয়, `total` বদলায় না।"
+    }
+  ]
+}

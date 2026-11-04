@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCourse } from '../data/course';
+import { site } from '../data/parts';
+
+const course = await getCourse();
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const total = course.reduce((n, p) => n + p.lessons.length, 0);
+const bnN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+const videos = course.flatMap((p) => p.lessons).filter((l) => l.video).length;
+---
+<Base nav="home">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Rust শেখো <em>বাংলায়</em>,<br />খেলতে খেলতে 🦀</h1>
+        <p class="lead">শূন্য থেকে Advanced পর্যন্ত {bnN(total)}টা ছোট পাঠ। প্রতিটার শেষে কুইজ-গেম আছে, সাথে XP, স্ট্রিক, ব্যাজ আর বস লড়াই। লগইন লাগে না, পুরোপুরি ফ্রি।</p>
+        <div class="cta">
+          <a class="btn" id="continue" href={base + 'learn/' + course[0].lessons[0].slug + '/'}>▶ শুরু করো</a>
+          <a class="btn ghost" href="#board">🗺️ রোডম্যাপ দেখো</a>
+        </div>
+        <div class="facts">
+          <span>📘 <b>{bnN(total)}</b>টা পাঠ</span>
+          <span>🧩 <b>{bnN(course.length)}</b>টা পর্ব + বস</span>
+          <span>▶️ <b>{bnN(videos)}</b>টা ভিডিও</span>
+          <span>▶ ব্রাউজারেই কোড চালাও</span>
+        </div>
+      </div>
+      <img class="hero-logo" src={base + 'logo-mark.png'} alt="Rust বাংলা" width="300" height="300" />
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="k">র‍্যাঙ্ক</div><div class="v"><span data-stat="rankIcon">🥚</span> <span data-stat="rank">ডিম</span></div><div class="bar"><i data-rank-bar></i></div><small class="muted" data-rank-next></small></div>
+      <div class="stat"><div class="k">মোট XP</div><div class="v">⚡ <span data-stat="xp">০</span></div></div>
+      <div class="stat"><div class="k">শেষ করা পাঠ</div><div class="v">📘 <span data-stat="done">০</span>/{bnN(total)}</div></div>
+      <div class="stat"><div class="k">আজকের লক্ষ্য (৫০ XP)</div><div class="v">🎯 <span data-stat="daily">০</span></div><div class="bar"><i data-daily-bar></i></div></div>
+    </div>
+
+    <div class="yt-promo">
+      <div class="ic">📺</div>
+      <div>
+        <h3>ভিডিও দেখে শিখতে চাও?</h3>
+        <p>Rust Bangla YouTube চ্যানেলে প্রতিটা পাঠের বাংলা ভিডিও আছে। বোর্ডে লাল ▶ চিহ্ন দেওয়া পাঠগুলোর ভিডিও আছে।</p>
+      </div>
+      <a class="btn red" href={site.youtube + '?sub_confirmation=1'} target="_blank" rel="noopener">সাবস্ক্রাইব করো</a>
+    </div>
+
+    <div id="board">
+      {course.map((p) => (
+        <section class="board-part" style={`--pc:${p.color}`} data-part={p.id}>
+          <div class="part-head">
+            <div class="pi">{p.icon}</div>
+            <div>
+              <h2>পর্ব {bnN(p.id)}: {p.title}</h2>
+              <p>{p.subtitle}</p>
+            </div>
+            <div class="pp"><span data-part-done={p.id}>০</span>/{bnN(p.lessons.length)}<small>শেষ</small></div>
+          </div>
+          <div class="path">
+            {p.lessons.map((l, i) => (
+              <div class="node-row">
+                <a class:list={['node', { video: !!l.video }]} href={base + 'learn/' + l.slug + '/'} data-slug={l.slug} title={l.title}>
+                  <span class="circle"><span class="num">{bnN(l.order)}</span>{l.icon}</span>
+                  <span class="lbl">{l.short}</span>
+                  <span class="stars" data-stars={l.slug}>☆☆☆</span>
+                </a>
+              </div>
+            ))}
+            <div class="node-row">
+              <a class="node boss" href={base + 'boss/' + p.id + '/'} data-boss={p.id} title={`পর্ব ${p.id}-এর বস লড়াই`}>
+                <span class="circle">🐉</span>
+                <span class="lbl">বস লড়াই</span>
+                <span class="stars" data-boss-score={p.id}>১০টা প্রশ্ন</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      ))}
+
+      <section class="board-part" style="--pc:#f2b134">
+        <div class="path">
+          <div class="node-row">
+            <a class="node boss" href={base + 'exam/'} id="exam-node">
+              <span class="circle">🎓</span>
+              <span class="lbl">ফাইনাল পরীক্ষা</span>
+              <span class="stars">৩০টা প্রশ্ন · সার্টিফিকেট</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { load, bn } from '../scripts/store';
+  const s = load();
+  const nodes = [...document.querySelectorAll<HTMLAnchorElement>('.node[data-slug]')];
+  nodes.forEach((n) => {
+    const r = s.lessons[n.dataset.slug!];
+    if (!r) return;
+    n.classList.add('done');
+    const st = n.querySelector('[data-stars]')!;
+    st.innerHTML = '<b>' + '★'.repeat(r.stars) + '</b>' + '☆'.repeat(3 - r.stars);
+  });
+  const next = nodes.find((n) => !s.lessons[n.dataset.slug!]);
+  if (next) {
+    next.classList.add('next');
+    const btn = document.getElementById('continue') as HTMLAnchorElement;
+    btn.href = next.href;
+    if (Object.keys(s.lessons).length) btn.textContent = '▶ চালিয়ে যাও: ' + next.querySelector('.lbl')!.textContent;
+  }
+  document.querySelectorAll<HTMLElement>('[data-part-done]').forEach((el) => {
+    const part = el.closest('[data-part]')!;
+    el.textContent = bn(part.querySelectorAll('.node.done[data-slug]').length);
+  });
+  document.querySelectorAll<HTMLElement>('[data-boss]').forEach((b) => {
+    const score = s.bosses[b.dataset.boss!];
+    if (score === undefined) return;
+    if (score >= 7) b.classList.add('done');
+    b.querySelector('[data-boss-score]')!.textContent = `সেরা: ${bn(score)}/১০ ${score >= 7 ? '🏆' : ''}`;
+  });
+  if (s.exam && s.exam.score / s.exam.total >= 0.7) document.getElementById('exam-node')?.classList.add('done');
+</script>

@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "trait-এর ভেতরে শুধু method-এর signature লিখলেও চলে, body না থাকলেও সমস্যা নেই।",
+      "answer": true,
+      "explain": "trait চুক্তি লেখে। body না থাকলে প্রতিটা type-কে impl-এ নিজে লিখতে হয়। চাইলে ডিফল্ট body-ও দেওয়া যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "trait Speak {\n    fn speak(&self) -> String;\n}\n\nstruct Dog;\nstruct Cat;\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        String::from(\"Woof\")\n    }\n}\n\nimpl Speak for Cat {\n    fn speak(&self) -> String {\n        String::from(\"Meow\")\n    }\n}\n\nfn main() {\n    println!(\"{}\", Cat.speak());\n}",
+      "options": [
+        "compile error",
+        "Meow",
+        "Woof",
+        "Woof Meow"
+      ],
+      "answer": 1,
+      "explain": "Cat-এর impl-এ speak() \"Meow\" return করে। প্রতিটা type নিজের মতো করে trait পূরণ করে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "trait Greet {\n    fn name(&self) -> String;\n    fn greet(&self) -> String {\n        format!(\"Hi, {}!\", self.name())\n    }\n}\n\nstruct User;\n\nimpl Greet for User {\n    fn name(&self) -> String {\n        String::from(\"Mina\")\n    }\n}\n\nfn main() {\n    println!(\"{}\", User.greet());\n}",
+      "options": [
+        "compile error: greet is missing",
+        "Hi, !",
+        "Hi, Mina!",
+        "Mina"
+      ],
+      "answer": 2,
+      "explain": "User শুধু name লিখেছে, greet-এর default body ব্যবহার হয়েছে। সেই body আবার self.name() ডাকে।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "trait Speak {\n    fn speak(&self) -> String;\n}\n\nstruct Dog;\nstruct Rock;\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        String::from(\"Woof\")\n    }\n}\n\nfn announce<T: Speak>(who: &T) {\n    println!(\"{}\", who.speak());\n}\n\nfn main() {\n    announce(&Dog);\n    announce(&Rock);\n}",
+      "answer": 20,
+      "explain": "Rock কখনো Speak implement করেনি। তাই announce(&Rock)-এ E0277 আসে: the trait bound `Rock: Speak` is not satisfied।"
+    },
+    {
+      "type": "fill",
+      "q": "Dog-এর জন্য trait implement করতে ফাঁকা জায়গায় কী বসবে?",
+      "code": "impl Speak ___ Dog {\n    fn speak(&self) -> String {\n        String::from(\"Woof\")\n    }\n}",
+      "answer": [
+        "for"
+      ],
+      "explain": "সঠিক রূপ হলো `impl Trait for Type`। এখানে Trait হলো Speak আর Type হলো Dog।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "trait Shape {\n    fn sides(&self) -> u32;\n    fn describe(&self) -> String {\n        format!(\"{} sides\", self.sides())\n    }\n}\n\nstruct Triangle;\nstruct Circle;\n\nimpl Shape for Triangle {\n    fn sides(&self) -> u32 {\n        3\n    }\n}\n\nimpl Shape for Circle {\n    fn sides(&self) -> u32 {\n        0\n    }\n    fn describe(&self) -> String {\n        String::from(\"round\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {}\", Triangle.describe(), Circle.describe());\n}",
+      "options": [
+        "compile error",
+        "3 sides, round",
+        "3 sides, 0 sides",
+        "round, round"
+      ],
+      "answer": 1,
+      "explain": "Triangle ডিফল্ট describe() পায়। Circle নিজের describe() লিখে ডিফল্টটা override করেছে।"
+    },
+    {
+      "type": "order",
+      "q": "একটা trait বানিয়ে ব্যবহার করার ধাপগুলো ঠিক ক্রমে সাজাও।",
+      "lines": [
+        "`trait Speak { fn speak(&self) -> String; }`",
+        "`struct Dog;`",
+        "`impl Speak for Dog { fn speak(&self) -> String { String::from(\"Woof\") } }`",
+        "`fn announce<T: Speak>(who: &T) { println!(\"{}\", who.speak()); }`",
+        "`announce(&Dog);`"
+      ],
+      "explain": "আগে trait আর type, তারপর impl দিয়ে সংযোগ। এরপর bound-সহ function লেখা যায়, আর সবশেষে তাকে ডাকা হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "`fn show(x: &impl Display)` আর `fn show<T: Display>(x: &T)`-এর মধ্যে সম্পর্ক কী?",
+      "options": [
+        "প্রথমটা runtime-এ চলে, দ্বিতীয়টা compile time-এ",
+        "প্রথমটা শুধু struct নেয়",
+        "দ্বিতীয়টা compile হয় না",
+        "প্রায় একই মানে, প্রথমটা শুধু লেখায় ছোট"
+      ],
+      "answer": 3,
+      "explain": "parameter-এ `impl Trait` হলো generic bound-এর ছোট রূপ। দুটোই compile time-এ type ঠিক করে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "যে type কোনো trait implement করেনি, তাকে `T: Trait` bound-ওয়ালা function-এ দেওয়া যায়।",
+      "answer": false,
+      "explain": "bound-এর কাজই হলো এটা আটকানো। দিলে compile error আসে, runtime পর্যন্ত যেতেই পারে না।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "trait Score {\n    fn base(&self) -> i32;\n    fn total(&self) -> i32 {\n        self.base() * 2\n    }\n}\n\nstruct A;\nstruct B;\n\nimpl Score for A {\n    fn base(&self) -> i32 {\n        5\n    }\n}\n\nimpl Score for B {\n    fn base(&self) -> i32 {\n        7\n    }\n    fn total(&self) -> i32 {\n        self.base() + 1\n    }\n}\n\nfn sum<T: Score, U: Score>(a: &T, b: &U) -> i32 {\n    a.total() + b.total()\n}\n\nfn main() {\n    println!(\"{}\", sum(&A, &B));\n}",
+      "options": [
+        "22",
+        "18",
+        "26",
+        "12"
+      ],
+      "answer": 1,
+      "explain": "A-এর total ডিফল্ট: 5 * 2 = 10। B নিজের total লিখেছে: 7 + 1 = 8। যোগফল 18।"
+    }
+  ]
+}

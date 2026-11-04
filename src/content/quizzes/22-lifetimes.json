@@ -1,0 +1,109 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "lifetime annotation (`'a`) লিখলে একটা reference আরও বেশিদিন বেঁচে থাকে।",
+      "answer": false,
+      "explain": "annotation কিছু বাঁচায় না। এটা শুধু compiler-কে reference-গুলোর সম্পর্ক জানায়, যাতে সে যাচাই করতে পারে।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {\n    if a.len() >= b.len() { a } else { b }\n}\n\nfn main() {\n    let x = String::from(\"abc\");\n    let y = String::from(\"abcd\");\n    println!(\"{}\", longest(&x, &y));\n}",
+      "options": [
+        "compile error",
+        "abcd",
+        "abc",
+        "abcabcd"
+      ],
+      "answer": 1,
+      "explain": "y লম্বা (৪ অক্ষর), তাই longest সেটাই ফেরত দেয়। দুটো String-ই main-এ বেঁচে আছে, তাই lifetime-এ সমস্যা নেই।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let r;\n    {\n        let x = 5;\n        r = &x;\n    }\n    println!(\"{r}\");\n}",
+      "answer": 5,
+      "explain": "r = &x লাইনে E0597 আসে: x যথেষ্ট সময় বাঁচে না, কারণ ভেতরের scope শেষ হলে x মরে যায় কিন্তু r তখনো ব্যবহার হচ্ছে।"
+    },
+    {
+      "type": "fill",
+      "q": "`'static` মানে কী? ফাঁকা জায়গায় lifetime-এর নামটা লেখো (apostrophe-সহ)।",
+      "code": "fn motto() -> &___ str {\n    \"no GC\"\n}",
+      "answer": [
+        "'static"
+      ],
+      "explain": "string literal-এর text binary-র ভেতরে থাকে, তাই সেটা পুরো program জুড়ে বৈধ: &'static str।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "struct Excerpt<'a> {\n    part: &'a str,\n}\n\nfn main() {\n    let text = String::from(\"one two three\");\n    let word = text.split(' ').nth(1).unwrap();\n    let e = Excerpt { part: word };\n    println!(\"{}\", e.part);\n}",
+      "options": [
+        "two",
+        "one",
+        "three",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "split করলে index 0 হলো one, index 1 হলো two। Excerpt text থেকে ধার নেয়, আর text তখনও বেঁচে আছে।"
+    },
+    {
+      "type": "choice",
+      "q": "নিচের কোন function-এ `'a` লিখতে **হবে**, মানে elision কাজ করবে না?",
+      "options": [
+        "`fn name(&self) -> &str` (method)",
+        "`fn pick(a: &str, b: &str) -> &str`",
+        "`fn first(s: &str) -> &str`",
+        "`fn len(s: &str) -> usize`"
+      ],
+      "answer": 1,
+      "explain": "দুটো reference input থাকলে compiler জানে না ফলাফল কোনটার সাথে বাঁধা। বাকি তিনটায় elision-এর নিয়ম খাটে।"
+    },
+    {
+      "type": "order",
+      "q": "dangling reference-এর ঘটনা ঠিক ক্রমে সাজাও (compile হলে যা ঘটতো)।",
+      "lines": [
+        "`let r;`",
+        "`{`",
+        "`    let x = 5;`",
+        "`    r = &x;`",
+        "`}` এখানে x মরে যায়",
+        "`println!(\"{r}\");` r ঝুলে থাকা জায়গার দিকে তাকিয়ে"
+      ],
+      "explain": "r বাইরের scope-এর, কিন্তু x ভেতরের scope-এর। ভেতরের scope শেষে x যায়, r-এর পরে ব্যবহার হলে সেটা dangling। তাই compiler এটা আটকায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn pick<'a>(a: &'a str, b: &str) -> &'a str {\n    let _ = b;\n    a\n}\n\nfn main() {\n    let keep = String::from(\"keep\");\n    let out;\n    {\n        let temp = String::from(\"temp\");\n        out = pick(&keep, &temp);\n    }\n    println!(\"{out}\");\n}",
+      "options": [
+        "temp",
+        "compile error: temp does not live long enough",
+        "keeptemp",
+        "keep"
+      ],
+      "answer": 3,
+      "explain": "ফলাফল শুধু a-র lifetime 'a-র সাথে বাঁধা। b-র আলাদা lifetime, তাই temp মরে গেলেও out নিরাপদ।"
+    },
+    {
+      "type": "truefalse",
+      "q": "function-এর ভেতরে বানানো `String`-এর `&` reference ফেরত দেওয়া যায়, যদি `'a` লিখে দাও।",
+      "answer": false,
+      "explain": "String function শেষে drop হয়ে যায়। কোনো annotation তাকে বাঁচাতে পারে না। সমাধান হলো String-টাই (মালিকানাসহ) ফেরত দেওয়া।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {\n    if a.len() >= b.len() { a } else { b }\n}\n\nfn main() {\n    let outer = String::from(\"outer\");\n    let result;\n    {\n        let inner = String::from(\"in\");\n        result = longest(&outer, &inner);\n        println!(\"{result}\");\n    }\n}",
+      "options": [
+        "outerin",
+        "outer",
+        "in",
+        "compile error: inner does not live long enough"
+      ],
+      "answer": 1,
+      "explain": "এবার result শুধু ভেতরের scope-এই ব্যবহার হয়, যখন inner বেঁচে আছে। তাই compile হয়, আর বড় string outer print হয়। result বাইরে ব্যবহার করলে error হতো।"
+    }
+  ]
+}

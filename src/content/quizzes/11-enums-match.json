@@ -1,0 +1,111 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "`match`-এ কোনো variant বাদ দিলে program চলে, কিন্তু runtime-এ crash করে।",
+      "answer": false,
+      "explain": "না। বাদ দিলে compile-ই হয় না (E0004)। এটাই exhaustive match-এর সুবিধা।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nfn main() {\n    let l = Light::Yellow;\n    let n = match l {\n        Light::Red => 1,\n        Light::Yellow => 2,\n        Light::Green => 3,\n    };\n    println!(\"{n}\");\n}",
+      "options": [
+        "2",
+        "1",
+        "3",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`l` হলো `Yellow`, আর সেই arm `2` দেয়।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "enum Dir {\n    Up,\n    Down,\n    Left,\n}\n\nfn main() {\n    let d = Dir::Up;\n    let n = match d {\n        Dir::Up => 1,\n        Dir::Down => 2,\n    };\n    println!(\"{n}\");\n}",
+      "answer": 9,
+      "explain": "`Left` সামলানো হয়নি। compiler `match` লাইনেই E0004 (non-exhaustive patterns) দেখায়।"
+    },
+    {
+      "type": "fill",
+      "q": "বাকি সব সংখ্যার জন্য ফাঁকা জায়গায় কী বসবে?",
+      "code": "let name = match n {\n    1 => \"one\",\n    2 => \"two\",\n    ___ => \"many\",\n};",
+      "answer": [
+        "_"
+      ],
+      "explain": "`_` সবকিছুর সাথে মেলে। তাই এটা সবসময় শেষ arm হিসেবে বসে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "enum Shape {\n    Circle(f64),\n    Rect { w: f64, h: f64 },\n}\n\nimpl Shape {\n    fn area(&self) -> f64 {\n        match self {\n            Shape::Circle(r) => r * r * 3.0,\n            Shape::Rect { w, h } => w * h,\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", Shape::Rect { w: 2.0, h: 5.0 }.area());\n}",
+      "options": [
+        "10",
+        "7",
+        "10.0",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`Rect { w, h }` arm চলে, `2.0 * 5.0 = 10.0`। `{}` দিয়ে `f64`-এর `10.0` print করলে `10` দেখায়।"
+    },
+    {
+      "type": "order",
+      "q": "`Dime` হলে `10`, নইলে `0`: কোডটা সাজাও।",
+      "lines": [
+        "enum Coin { Penny, Dime }",
+        "let c = Coin::Dime;",
+        "let v = match c {",
+        "    Coin::Dime => 10,",
+        "    _ => 0,",
+        "};",
+        "println!(\"{v}\");"
+      ],
+      "explain": "`_` সবসময় শেষে বসে, কারণ সে বাকি সব মিলিয়ে নেয়। `match` একটা expression, তাই `let v = match ...;` চলে।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nfn main() {\n    println!(\"{}\", matches!(Light::Green, Light::Red | Light::Yellow));\n}",
+      "options": [
+        "false",
+        "true",
+        "Green",
+        "compile error"
+      ],
+      "answer": 0,
+      "explain": "`Green` `Red | Yellow`-এর কোনোটাই নয়, তাই `matches!` `false` দেয়।"
+    },
+    {
+      "type": "truefalse",
+      "q": "Rust-এর enum-এর variant নিজের ডেটা বহন করতে পারে, যেমন `Circle(f64)`।",
+      "answer": true,
+      "explain": "হ্যাঁ। প্রতিটা variant-এর ডেটার ধরন আলাদা হতে পারে, আর `match` দিয়ে সেটা বের করা যায়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "enum Msg {\n    Text(String),\n    Quit,\n}\n\nfn main() {\n    let m = Msg::Quit;\n    if let Msg::Text(t) = m {\n        println!(\"{t}\");\n    } else {\n        println!(\"other\");\n    }\n}",
+      "options": [
+        "other",
+        "hi",
+        "compile error",
+        "কিছুই না"
+      ],
+      "answer": 0,
+      "explain": "`m` হলো `Quit`, `Text` নয়। তাই `if let` মেলে না আর `else` চলে।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "enum Op {\n    Add(i32, i32),\n    Neg(i32),\n    Nop,\n}\n\nfn run(o: Op) -> i32 {\n    match o {\n        Op::Add(a, b) => a + b,\n        Op::Neg(x) => -x,\n        Op::Nop => 0,\n    }\n}\n\nfn main() {\n    println!(\"{}\", run(Op::Add(2, 3)) + run(Op::Neg(4)) + run(Op::Nop));\n}",
+      "options": [
+        "1",
+        "9",
+        "-1",
+        "5"
+      ],
+      "answer": 0,
+      "explain": "`Add(2, 3)` = ৫, `Neg(4)` = -৪, `Nop` = ০। যোগ করলে `5 - 4 + 0 = 1`।"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "cards": [
+    {
+      "type": "truefalse",
+      "q": "Rust-এ একটা value-এর একই সময়ে দুজন মালিক থাকতে পারে।",
+      "answer": false,
+      "explain": "নিয়ম ২: মালিক একজনই। দুজন মালিক থাকলে value দুবার free হওয়ার ভয় থাকতো।"
+    },
+    {
+      "type": "choice",
+      "q": "এই প্রোগ্রাম কী print করবে?",
+      "code": "fn main() {\n    let x = 10;\n    let y = x;\n    println!(\"{x} {y}\");\n}",
+      "options": ["10 10", "compile error: x moved", "10 0", "0 10"],
+      "answer": 0,
+      "explain": "i32 একটা Copy type। y = x লিখলে কপি হয়, তাই x তখনও ব্যবহার করা যায়।"
+    },
+    {
+      "type": "line",
+      "q": "কোন লাইনে compiler আপত্তি করবে? লাইনটায় ট্যাপ করো।",
+      "code": "fn main() {\n    let a = String::from(\"hi\");\n    let b = a;\n    println!(\"{a}\");\n}",
+      "answer": 4,
+      "explain": "লাইন ৩-এ a-এর মালিকানা b-তে move হয়ে গেছে। তাই লাইন ৪-এ a ব্যবহার করলে E0382: borrow of moved value আসে।"
+    },
+    {
+      "type": "choice",
+      "q": "নিচের কোন type-টা Copy নয় (অর্থাৎ `=` দিলে move হয়)?",
+      "options": ["`i32`", "`bool`", "`String`", "`(char, f64)`"],
+      "answer": 2,
+      "explain": "String-এর লেখাগুলো heap-এ থাকে, তাই সেটা move হয়। বাকিগুলো ছোট, stack-এ থাকে, তাই Copy।"
+    },
+    {
+      "type": "fill",
+      "q": "a আর b দুটোই ব্যবহার করতে চাইলে ফাঁকা জায়গায় কোন method ডাকবে?",
+      "code": "let a = String::from(\"rust\");\nlet b = a.___();\nprintln!(\"{a} {b}\");",
+      "answer": ["clone"],
+      "explain": ".clone() heap-এ নতুন একটা কপি বানায়। তখন a আর b দুটো আলাদা String-এর মালিক হয়।"
+    },
+    {
+      "type": "choice",
+      "q": "কী print হবে?",
+      "code": "fn main() {\n    {\n        let s = String::from(\"inner\");\n        println!(\"{s}\");\n    }\n    println!(\"done\");\n}",
+      "options": ["inner\ndone", "done", "compile error", "inner"],
+      "answer": 0,
+      "explain": "s ভেতরের scope-এর মধ্যেই print হয়, তারপর } এ drop হয়ে যায়। এরপর বাইরের লাইন চলে।"
+    },
+    {
+      "type": "order",
+      "q": "একটা String-এর জীবনচক্র ঘটনার ক্রমে সাজাও।",
+      "lines": [
+        "`let s = String::from(\"hi\");` heap-এ জায়গা নেওয়া হয়",
+        "`let t = s;` মালিকানা t-তে move হয়",
+        "`println!(\"{t}\");` t ব্যবহার করা হয়",
+        "scope শেষ: t drop হয়, memory ফেরত যায়"
+      ],
+      "explain": "আগে তৈরি, তারপর move, তারপর নতুন মালিক ব্যবহার করে, আর scope শেষে drop।"
+    },
+    {
+      "type": "choice",
+      "q": "এই কোড কি compile হবে?",
+      "code": "fn eat(s: String) {}\n\nfn main() {\n    let food = String::from(\"rice\");\n    eat(food);\n    eat(food);\n}",
+      "options": ["হ্যাঁ, দুবার eat চলবে", "না, প্রথম eat-এ food move হয়ে গেছে", "না, eat কিছু return করে না", "হ্যাঁ, কিন্তু warning দেবে"],
+      "answer": 1,
+      "explain": "function-এ String পাঠালে মালিকানা চলে যায়। দ্বিতীয় call-এ food আর নেই, তাই E0382 আসে।"
+    },
+    {
+      "type": "truefalse",
+      "q": "function কোনো String return করলে তার মালিকানা caller-এর কাছে চলে আসে।",
+      "answer": true,
+      "explain": "return করাও একটা move। যে variable রিটার্ন ভ্যালু ধরে, সে-ই নতুন মালিক।"
+    },
+    {
+      "type": "choice",
+      "q": "বস প্রশ্ন 🦀: কী print হবে?",
+      "code": "fn add_bang(mut s: String) -> String {\n    s.push('!');\n    s\n}\n\nfn main() {\n    let a = String::from(\"go\");\n    let n = a.len();\n    let b = add_bang(a);\n    println!(\"{b} {n}\");\n}",
+      "options": ["go! 2", "go! 3", "compile error: a moved", "go 2"],
+      "answer": 0,
+      "explain": "n = 2 বের করা হয়েছে move-এর আগে, আর usize হলো Copy। a function-এ move হয়, সেখানে '!' যোগ হয়, তারপর b হিসেবে ফেরত আসে।"
+    }
+  ]
+}
